@@ -53,9 +53,7 @@ final case class RoutePattern[A](method: Method, pathCodec: PathCodec[A]) { self
    * Returns a new pattern that is extended with the specified segment pattern.
    */
   def /[B](that: PathCodec[B])(implicit combiner: Combiner[A, B]): RoutePattern[combiner.Out] =
-    if (that == PathCodec.empty) self.asInstanceOf[RoutePattern[combiner.Out]]
-    else if (pathCodec == PathCodec.empty) copy(pathCodec = that.asInstanceOf[PathCodec[combiner.Out]])
-    else copy(pathCodec = pathCodec ++ that)
+    copy(pathCodec = pathCodec ++ that)
 
   /**
    * Creates a route from this pattern and the specified handler.
@@ -183,6 +181,12 @@ object RoutePattern                                                       {
       }
       if (wildcardsTree eq null) forMethod
       else forMethod ++ wildcardsTree.get(path)
+    }
+
+    def getAllMethods(path: Path): Set[Method] = {
+      roots.collect {
+        case (method, subtree) if subtree.get(path).nonEmpty => method
+      }.toSet
     }
 
     def map[B](f: A => B): Tree[B] =
