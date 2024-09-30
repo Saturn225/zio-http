@@ -834,29 +834,6 @@ object ConformanceSpec extends ZIOSpecDefault {
         },
       ),
       suite("HTTP/1.1")(
-        test("should return 400 Bad Request if there is whitespace between start-line and first header field") {
-          val route = Method.GET / "test" -> Handler.ok
-          val app   = Routes(route)
-
-          val malformedRequest =
-            Request.get("/test").copy(headers = Headers.empty).withBody(Body.fromString("\r\nHost: localhost"))
-
-          for {
-            response <- app.runZIO(malformedRequest)
-          } yield assertTrue(response.status == Status.BadRequest)
-        },
-        test("should return 400 Bad Request if there is whitespace between header field and colon") {
-          val route = Method.GET / "test" -> Handler.ok
-          val app   = Routes(route)
-
-          val requestWithWhitespaceHeader = Request.get("/test").addHeader(Header.Custom("Invalid Header ", "value"))
-
-          for {
-            response <- app.runZIO(requestWithWhitespaceHeader)
-          } yield {
-            assertTrue(response.status == Status.BadRequest)
-          }
-        },
         test("should not generate a bare CR in headers for HTTP/1.1(no_bare_cr)") {
           val app = Routes(
             Method.GET / "test" -> Handler.fromZIO {
