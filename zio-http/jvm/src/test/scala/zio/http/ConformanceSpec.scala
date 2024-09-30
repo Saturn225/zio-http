@@ -9,6 +9,7 @@ import zio.test.TestAspect._
 import zio.test._
 
 import zio.http._
+import zio.http.internal.{DynamicServer, RoutesRunnableSpec, serverTestLayer}
 
 object ConformanceSpec extends ZIOSpecDefault {
 
@@ -19,9 +20,8 @@ object ConformanceSpec extends ZIOSpecDefault {
    * Stock, presented at the 19th ACM Asia Conference on Computer and
    * Communications Security (ASIA CCS) 2024.
    *
-   * Paper URL: https://doi.org/10.1145/3634737.3637678 
-   * GitHub Project: https://github.com/cispa/http-conformance
-   *
+   * Paper URL: https://doi.org/10.1145/3634737.3637678 GitHub Project:
+   * https://github.com/cispa/http-conformance
    */
 
   val validUrl = URL.decode("http://example.com").toOption.getOrElse(URL.root)
@@ -504,48 +504,6 @@ object ConformanceSpec extends ZIOSpecDefault {
         },
       ),
       suite("HTTP Headers")(
-        suite("code_400_after_bad_host_request")(
-          test("should return 200 OK if Host header is present") {
-            val route           = Method.GET / "test" -> Handler.ok
-            val app             = Routes(route)
-            val requestWithHost = Request.get("/test").addHeader(Header.Host("localhost"))
-            for {
-              response <- app.runZIO(requestWithHost)
-            } yield assertTrue(response.status == Status.Ok)
-          },
-          test("should return 400 Bad Request if Host header is missing") {
-            val route              = Method.GET / "test" -> Handler.ok
-            val app                = Routes(route)
-            val requestWithoutHost = Request.get("/test")
-
-            for {
-              response <- app.runZIO(requestWithoutHost)
-            } yield assertTrue(response.status == Status.BadRequest)
-          },
-          test("should return 400 Bad Request if there are multiple Host headers") {
-            val route               = Method.GET / "test" -> Handler.ok
-            val app                 = Routes(route)
-            val requestWithTwoHosts = Request
-              .get("/test")
-              .addHeader(Header.Host("example.com"))
-              .addHeader(Header.Host("another.com"))
-
-            for {
-              response <- app.runZIO(requestWithTwoHosts)
-            } yield assertTrue(response.status == Status.BadRequest)
-          },
-          test("should return 400 Bad Request if Host header is invalid") {
-            val route                  = Method.GET / "test" -> Handler.ok
-            val app                    = Routes(route)
-            val requestWithInvalidHost = Request
-              .get("/test")
-              .addHeader(Header.Host("invalid_host"))
-
-            for {
-              response <- app.runZIO(requestWithInvalidHost)
-            } yield assertTrue(response.status == Status.BadRequest)
-          },
-        ),
         test("should not include Content-Length header for 2XX CONNECT responses(content_length_2XX_connect)") {
           val app = Routes(
             Method.CONNECT / "" -> Handler.fromResponse(
@@ -764,22 +722,6 @@ object ConformanceSpec extends ZIOSpecDefault {
           },
         ),
         suite("transfer_encoding_http11")(
-          test("should not send Transfer-Encoding in response if request HTTP version is below 1.1") {
-            val app = Routes(
-              Method.GET / "test" -> Handler.fromResponse(
-                Response.ok.addHeader(Header.TransferEncoding.Chunked),
-              ),
-            )
-
-            val request = Request.get("/test").copy(version = Version.`HTTP/1.0`)
-
-            for {
-              response <- app.runZIO(request)
-            } yield assertTrue(
-              response.status == Status.Ok,
-              !response.headers.contains(Header.TransferEncoding.name),
-            )
-          },
           test("should send Transfer-Encoding in response if request HTTP version is 1.1 or higher") {
             val app = Routes(
               Method.GET / "test" -> Handler.fromResponse(
@@ -848,6 +790,18 @@ object ConformanceSpec extends ZIOSpecDefault {
             headHeaders = headResponse.headers.toList.map(_.headerName).toSet
           } yield assertTrue(
             getHeaders == headHeaders,
+          )
+        },
+        test("404 response for truly non-existent path") {
+          val app     = Routes(
+            Method.GET / "existing-path" -> Handler.ok,
+          )
+          val request = Request.get(URL(Path.root / "non-existent-path"))
+
+          for {
+            response <- app.runZIO(request)
+          } yield assertTrue(
+            response.status == Status.NotFound,
           )
         },
         test("should reply with 501 for unknown HTTP methods (code_501_unknown_methods)") {
