@@ -9,7 +9,6 @@ import zio.test.TestAspect._
 import zio.test._
 
 import zio.http._
-import zio.http.internal.{DynamicServer, RoutesRunnableSpec, serverTestLayer}
 
 object ConformanceSpec extends ZIOSpecDefault {
 
@@ -20,8 +19,8 @@ object ConformanceSpec extends ZIOSpecDefault {
    * Stock, presented at the 19th ACM Asia Conference on Computer and
    * Communications Security (ASIA CCS) 2024.
    *
-   * Paper URL: https://doi.org/10.1145/3634737.3637678 GitHub Project:
-   * https://github.com/cispa/http-conformance
+   * Paper URL: https://doi.org/10.1145/3634737.3637678 
+   * GitHub Project: https://github.com/cispa/http-conformance
    */
 
   val validUrl = URL.decode("http://example.com").toOption.getOrElse(URL.root)
