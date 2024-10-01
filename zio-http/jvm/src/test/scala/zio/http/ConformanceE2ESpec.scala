@@ -9,7 +9,7 @@ import zio.http._
 import zio.http.internal.{DynamicServer, RoutesRunnableSpec}
 import zio.http.netty.NettyConfig
 
-object ConformanceSpec2 extends RoutesRunnableSpec {
+object ConformanceE2ESpec extends RoutesRunnableSpec {
 
   private val port    = 8080
   private val MaxSize = 1024 * 10
