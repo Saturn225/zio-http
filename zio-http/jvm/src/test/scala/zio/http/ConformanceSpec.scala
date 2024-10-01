@@ -19,8 +19,9 @@ object ConformanceSpec extends ZIOSpecDefault {
    * Stock, presented at the 19th ACM Asia Conference on Computer and
    * Communications Security (ASIA CCS) 2024.
    *
-   * Paper URL: https://doi.org/10.1145/3634737.3637678 
+   * Paper URL: https://doi.org/10.1145/3634737.3637678
    * GitHub Project: https://github.com/cispa/http-conformance
+   * 
    */
 
   val validUrl = URL.decode("http://example.com").toOption.getOrElse(URL.root)
@@ -759,7 +760,6 @@ object ConformanceSpec extends ZIOSpecDefault {
           val app = Routes(
             Method.POST / "test" -> Handler.fromResponse(Response.status(Status.Ok)),
           )
-
           for {
             res <- app.runZIO(Request.post("/test", Body.empty))
 
@@ -791,7 +791,7 @@ object ConformanceSpec extends ZIOSpecDefault {
             getHeaders == headHeaders,
           )
         },
-        test("404 response for truly non-existent path") {
+        test("should reply with 404 response for truly non-existent path") {
           val app     = Routes(
             Method.GET / "existing-path" -> Handler.ok,
           )
