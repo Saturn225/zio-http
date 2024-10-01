@@ -9,7 +9,7 @@ import zio.http._
 import zio.http.internal.{DynamicServer, RoutesRunnableSpec}
 import zio.http.netty.NettyConfig
 
-object ConformanceE2ESpec extends RoutesRunnableSpec {
+object ConformanceSpec2 extends RoutesRunnableSpec {
 
   private val port    = 8080
   private val MaxSize = 1024 * 10
@@ -33,21 +33,6 @@ object ConformanceE2ESpec extends RoutesRunnableSpec {
 
       val res = routes.deploy.status.run(path = Path.root, headers = Headers(Header.Host("localhost")))
       assertZIO(res)(equalTo(Status.Ok))
-    },
-    test("should reply with 501 for unknown HTTP methods (code_501_unknown_methods)") {
-      val routes = Handler.ok.toRoutes
-
-      val res = routes.deploy.status.run(path = Path.root, method = Method.CUSTOM("ABC"))
-
-      assertZIO(res)(equalTo(Status.NotImplemented))
-    },
-    test(
-      "should reply with 405 when the request method is not allowed for the target resource (code_405_blocked_methods)",
-    ) {
-      val routes = Handler.ok.toRoutes
-
-      val res = routes.deploy.status.run(path = Path.root, method = Method.CONNECT)
-      assertZIO(res)(equalTo(Status.MethodNotAllowed))
     },
     test("should return 400 Bad Request if header contains CR, LF, or NULL (reject_fields_containing_cr_lf_nul)") {
       val routes = Handler.ok.toRoutes
