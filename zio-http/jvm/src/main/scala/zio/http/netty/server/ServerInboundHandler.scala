@@ -87,19 +87,29 @@ private[zio] final case class ServerInboundHandler(
             )
             releaseRequest()
           } else {
-            val req = makeZioRequest(ctx, jReq)
-            if (!validateHostHeader(req)) {
-              attemptFastWrite(ctx, req.method, Response.status(Status.BadRequest))
-              releaseRequest()
-            } else {
-
-              val exit = handler(req)
-              if (attemptImmediateWrite(ctx, req.method, exit)) {
+            try {
+              val req = makeZioRequest(ctx, jReq)
+              if (!validateHostHeader(req)) {
+                attemptFastWrite(ctx, req.method, Response.status(Status.BadRequest))
                 releaseRequest()
               } else {
-                writeResponse(ctx, runtime, exit, req)(releaseRequest)
 
+                val exit = handler(req)
+                if (attemptImmediateWrite(ctx, req.method, exit)) {
+                  releaseRequest()
+                } else {
+                  writeResponse(ctx, runtime, exit, req)(releaseRequest)
+
+                }
               }
+            } catch {
+              case _: IllegalArgumentException =>
+                attemptFastWrite(
+                  ctx,
+                  Conversions.methodFromNetty(jReq.method()),
+                  Response.status(Status.BadRequest),
+                )
+                releaseRequest()
             }
           }
         } finally {
@@ -116,16 +126,16 @@ private[zio] final case class ServerInboundHandler(
   }
 
   private def validateHostHeader(req: Request): Boolean = {
-    req.headers.get("Host") match {
-      case Some(host) =>
-        val parts       = host.split(":")
-        val hostname    = parts(0)
-        val isValidHost = validateHostname(hostname)
-        val isValidPort = parts.length == 1 || (parts.length == 2 && parts(1).forall(_.isDigit))
-        val isValid     = isValidHost && isValidPort
-        isValid
-      case None       =>
-        false
+    val host = req.headers.get("Host").getOrElse(null)
+    if (host != null) {
+      val parts       = host.split(":")
+      val hostname    = parts(0)
+      val isValidHost = validateHostname(hostname)
+      val isValidPort = parts.length == 1 || (parts.length == 2 && parts(1).forall(_.isDigit))
+      val isValid     = isValidHost && isValidPort
+      isValid
+    } else {
+      false
     }
   }
 
@@ -143,6 +153,7 @@ private[zio] final case class ServerInboundHandler(
 
   override def exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): Unit =
     cause match {
+
       case ioe: IOException if {
             val msg = ioe.getMessage
             (msg ne null) && msg.contains("Connection reset")
