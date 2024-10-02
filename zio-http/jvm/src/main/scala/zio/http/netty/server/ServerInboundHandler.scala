@@ -87,29 +87,19 @@ private[zio] final case class ServerInboundHandler(
             )
             releaseRequest()
           } else {
-            try {
-              val req = makeZioRequest(ctx, jReq)
-              if (!validateHostHeader(req)) {
-                attemptFastWrite(ctx, req.method, Response.status(Status.BadRequest))
+            val req = makeZioRequest(ctx, jReq)
+            if (!validateHostHeader(req)) {
+              attemptFastWrite(ctx, req.method, Response.status(Status.BadRequest))
+              releaseRequest()
+            } else {
+
+              val exit = handler(req)
+              if (attemptImmediateWrite(ctx, req.method, exit)) {
                 releaseRequest()
               } else {
+                writeResponse(ctx, runtime, exit, req)(releaseRequest)
 
-                val exit = handler(req)
-                if (attemptImmediateWrite(ctx, req.method, exit)) {
-                  releaseRequest()
-                } else {
-                  writeResponse(ctx, runtime, exit, req)(releaseRequest)
-
-                }
               }
-            } catch {
-              case _: IllegalArgumentException =>
-                attemptFastWrite(
-                  ctx,
-                  Conversions.methodFromNetty(jReq.method()),
-                  Response.status(Status.BadRequest),
-                )
-                releaseRequest()
             }
           }
         } finally {
