@@ -255,7 +255,7 @@ final case class Routes[-Env, +Err](routes: Chunk[zio.http.Route[Env, Err]]) { s
             Handler.notImplemented
           case _                =>
             if (chunk.isEmpty) {
-              if (allowedMethods.isEmpty) {
+              if (allowedMethods.isEmpty || allowedMethods == Set(Method.OPTIONS)) {
                 // If no methods are allowed for the path, return 404 Not Found
                 Handler.notFound
               } else {
