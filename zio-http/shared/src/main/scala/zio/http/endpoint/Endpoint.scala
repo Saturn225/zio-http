@@ -270,7 +270,7 @@ final case class Endpoint[PathInput, Input, Err, Output, Auth <: AuthType](
       case AuthType.Bearer              =>
         HeaderCodec.authorization.transformOrFail {
           case Header.Authorization.Bearer(_) => Right(())
-          case _                              => Left("Bearer auth required")
+          case _ => Left(Response.unauthorized.addHeaders(Headers(Header.WWWAuthenticate.Bearer(realm = "Access"))))
         } { case () =>
           Left("Unsupported")
         }
