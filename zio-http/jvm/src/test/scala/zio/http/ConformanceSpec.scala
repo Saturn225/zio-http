@@ -148,12 +148,10 @@ object ConformanceSpec extends ZIOSpecDefault {
         },
         test("should return 401 Unauthorized when Authorization header is missing(code_401_missing_authorization)") {
         val app = Routes(
-          Method.GET / "protected" -> Handler.fromFunctionZIO { (request: Request) =>
-            request.headers.get(Header.Authorization.name) match {
-              case Some(_) => ZIO.succeed(Response.ok)
-              case None    => ZIO.succeed(Response.status(Status.Unauthorized))
-            }
-          },
+          Endpoint(RoutePattern.GET / "protected")
+            .header(HeaderCodec.authorization)
+            .out[String]
+            .implement { _ => ZIO.succeed("Authenticated") },
         )
 
         val requestWithoutAuth = Request.get("/protected")
