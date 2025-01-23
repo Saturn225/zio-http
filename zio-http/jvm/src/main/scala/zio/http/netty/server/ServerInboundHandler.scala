@@ -115,7 +115,7 @@ private[zio] final case class ServerInboundHandler(
   }
 
   private def validateHostHeader(req: Request): Boolean = {
-    val host = req.headers.get("Host").getOrElse(null)
+    val host = req.headers.getUnsafe("Host")
     if (host != null) {
       val parts       = host.split(":")
       val isValidHost = parts(0).forall(c => c.isLetterOrDigit || c == '.' || c == '-')
