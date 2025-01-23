@@ -32,7 +32,7 @@ import zio.http._
  */
 trait HeaderModifier[+A] { self =>
   final def addHeader(header: Header): A =
-      addHeaders(Headers(header))
+    addHeaders(Headers(header))
 
   final def addHeader(name: CharSequence, value: CharSequence): A =
     addHeaders(Headers.apply(name, value))
