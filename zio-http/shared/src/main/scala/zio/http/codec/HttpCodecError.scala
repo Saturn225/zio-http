@@ -31,7 +31,7 @@ sealed trait HttpCodecError extends Exception with NoStackTrace with Product wit
 }
 object HttpCodecError {
   final case class MissingHeader(headerName: String)                                           extends HttpCodecError {
-    def message = if (headerName.equalsIgnoreCase("Authorization")) "Missing Authorization header - Unauthorized"
+    def message = if (headerName.equalsIgnoreCase("Authorization")) "Missing Authorization header"
     else s"Missing header $headerName"
   }
   final case class MalformedMethod(expected: zio.http.Method, actual: zio.http.Method)         extends HttpCodecError {
