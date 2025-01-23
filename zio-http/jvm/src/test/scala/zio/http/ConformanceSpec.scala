@@ -150,21 +150,21 @@ object ConformanceSpec extends ZIOSpecDefault {
           )
         },
         test("should return 401 Unauthorized when Authorization header is missing(code_401_missing_authorization)") {
-        val app = Routes(
-          Endpoint(RoutePattern.GET / "protected")
-            .header(HeaderCodec.authorization)
-            .out[String]
-            .implement { _ => ZIO.succeed("Authenticated") },
-        )
+          val app = Routes(
+            Endpoint(RoutePattern.GET / "protected")
+              .header(HeaderCodec.authorization)
+              .out[String]
+              .implement { _ => ZIO.succeed("Authenticated") },
+          )
 
-        val requestWithoutAuth = Request.get("/protected")
+          val requestWithoutAuth = Request.get("/protected")
 
-        for {
-          response <- app.runZIO(requestWithoutAuth)
-        } yield assertTrue(
-          response.status == Status.Unauthorized,
-        )
-      },
+          for {
+            response <- app.runZIO(requestWithoutAuth)
+          } yield assertTrue(
+            response.status == Status.Unauthorized,
+          )
+        },
         test("should include Allow header for 405 Method Not Allowed response(code_405_allow)") {
           val app = Routes(
             Method.POST / "not-allowed" -> Handler.fromResponse(
