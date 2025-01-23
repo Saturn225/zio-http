@@ -8,10 +8,9 @@ import zio.test.Assertion._
 import zio.test.TestAspect._
 import zio.test._
 
-import zio.http.endpoint.Endpoint
-import zio.http.codec.HeaderCodec
-import zio.http.codec.PathCodec
 import zio.http._
+import zio.http.codec.{HeaderCodec, PathCodec}
+import zio.http.endpoint.Endpoint
 
 object ConformanceSpec extends ZIOSpecDefault {
 
