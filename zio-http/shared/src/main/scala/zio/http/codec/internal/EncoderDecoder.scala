@@ -385,7 +385,7 @@ private[codec] object EncoderDecoder {
 
             case None =>
               if (codec.name.equalsIgnoreCase("Authorization")) {
-                throw HttpCodecError.MissingHeader("Authorization: Bearer realm=\"Access\"")
+                throw HttpCodecError.MissingHeader("Authorization")
               } else {
                 throw HttpCodecError.MissingHeader(codec.name)
               }
