@@ -125,10 +125,10 @@ private[zio] final case class ServerInboundHandler(
             s"Invalid Host header for request ${req.method} ${req.url}. " +
               s"Host: $host, isValidHost: $isValidHost",
           )
-      } else {
-        false
       }
       isValidHost
+    }else {
+      false
     }
   }
 
