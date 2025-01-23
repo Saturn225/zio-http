@@ -119,19 +119,14 @@ private[zio] final case class ServerInboundHandler(
     if (host != null) {
       val parts       = host.split(":")
       val isValidHost = parts(0).forall(c => c.isLetterOrDigit || c == '.' || c == '-')
-      val isValidPort = parts.length == 1 || (parts.length == 2 && parts(1).forall(_.isDigit))
-      val isValid     = isValidHost && isValidPort
-      if (!isValid) {
+      if (!isValidHost) {
         ZIO
           .logWarning(
             s"Invalid Host header for request ${req.method} ${req.url}. " +
-              s"Host: $host, isValidHost: $isValidHost, isValidPort: $isValidPort",
+              s"Host: $host, isValidHost: $isValidHost",
           )
       }
-      isValid
-    } else {
-      ZIO.logWarning(s"Missing Host header for request ${req.method} ${req.url}")
-      false
+      isValidHost
     }
   }
 
