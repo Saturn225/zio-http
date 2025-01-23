@@ -127,7 +127,7 @@ private[zio] final case class ServerInboundHandler(
           )
       }
       isValidHost
-    }else {
+    } else {
       false
     }
   }
