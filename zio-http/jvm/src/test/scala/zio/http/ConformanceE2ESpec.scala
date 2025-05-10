@@ -11,14 +11,16 @@ import zio.http.netty.NettyConfig
 
 object ConformanceE2ESpec extends RoutesRunnableSpec {
 
-  private val port    = 8080
-  private val MaxSize = 1024 * 10
-  val configApp       = Server.Config.default
-    .requestDecompression(true)
-    .disableRequestStreaming(MaxSize)
-    .port(port)
-    .responseCompression()
-    .validateHeaders(true)
+  private val port                   = 8080
+  private val MaxSize                = 1024 * 10
+  val configApp: ServerRuntimeConfig = ServerRuntimeConfig(
+    Server.Config.default
+      .requestDecompression(true)
+      .disableRequestStreaming(MaxSize)
+      .port(port)
+      .responseCompression(),
+    validateHeaders = true,
+  )
 
   private val app = serve
 
