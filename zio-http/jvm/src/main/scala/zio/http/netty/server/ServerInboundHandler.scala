@@ -90,7 +90,10 @@ private[zio] final case class ServerInboundHandler(
             releaseRequest()
           } else {
             val req = makeZioRequest(ctx, jReq)
+            println(s"[DEBUG] validateHeaders flag: ${config.validateHeaders}")
+            println(s"[DEBUG] Incoming Host header: ${req.headers.getUnsafe("Host")}")
             if (config.validateHeaders && !validateHostHeader(req)) {
+              println(s"[DEBUG] Host header invalid, returning BadRequest")
               attemptFastWrite(ctx, req.method, Response.status(Status.BadRequest))
               releaseRequest()
             } else {
