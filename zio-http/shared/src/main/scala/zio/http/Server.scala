@@ -598,5 +598,8 @@ object ServerRuntimeConfig {
     }
 
     val layer: ZLayer[Server.Config, Nothing, ServerRuntimeConfig] =
-      ZLayer(ZIO.config(ServerRuntimeConfig.config))
+      ZLayer.fromFunction(cfg => ServerRuntimeConfig(cfg, false))
+  
+    val configLayer: ZLayer[Any, Config.Error, ServerRuntimeConfig] =
+      ZLayer.fromZIO(ZIO.config(config))
 }
