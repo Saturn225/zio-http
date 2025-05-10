@@ -596,4 +596,7 @@ object ServerRuntimeConfig {
     (Server.Config.config ++ zio.Config.boolean("validate-headers").withDefault(false)).map { case (cfg, validate) =>
       ServerRuntimeConfig(cfg, validate)
     }
+
+  val layer: ZLayer[Server.Config, Nothing, ServerRuntimeConfig] =
+    ZLayer.fromFunction(ServerRuntimeConfig(_))
 }
