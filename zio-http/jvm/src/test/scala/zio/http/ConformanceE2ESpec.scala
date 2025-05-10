@@ -11,16 +11,17 @@ import zio.http.netty.NettyConfig
 
 object ConformanceE2ESpec extends RoutesRunnableSpec {
 
-  private val port                   = 8080
-  private val MaxSize                = 1024 * 10
-  val configApp: ServerRuntimeConfig = ServerRuntimeConfig(
+  private val port              = 8080
+  private val MaxSize           = 1024 * 10
+  val baseConfig: Server.Config =
     Server.Config.default
       .requestDecompression(true)
       .disableRequestStreaming(MaxSize)
       .port(port)
-      .responseCompression(),
-    validateHeaders = true,
-  )
+      .responseCompression()
+
+  val configApp: ServerRuntimeConfig =
+    ServerRuntimeConfig(baseConfig, validateHeaders = true)
 
   private val app = serve
 
@@ -47,10 +48,8 @@ object ConformanceE2ESpec extends RoutesRunnableSpec {
       Scope.default,
       DynamicServer.live,
       ZLayer.succeed(configApp.config),
-      ZLayer.succeed(configApp),
       Server.customized,
       Client.default,
       ZLayer.succeed(NettyConfig.default),
     ) @@ sequential @@ withLiveClock
-
 }
