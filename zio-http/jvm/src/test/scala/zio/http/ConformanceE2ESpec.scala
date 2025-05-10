@@ -44,7 +44,9 @@ object ConformanceE2ESpec extends RoutesRunnableSpec {
     }.provideShared(
       Scope.default,
       DynamicServer.live,
-      Server.customizedWith(cfg => ServerRuntimeConfig(cfg, validateHeaders = true)),
+      Server.customized,
+      ZLayer.succeed(cfg),
+      ZLayer.succeed(ServerRuntimeConfig(cfg, validateHeaders = true)),
       Client.default,
       ZLayer.succeed(NettyConfig.default),
     ) @@ sequential @@ withLiveClock
