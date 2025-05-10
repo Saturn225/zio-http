@@ -20,8 +20,7 @@ object ConformanceE2ESpec extends RoutesRunnableSpec {
       .port(port)
       .responseCompression()
 
-  val configApp: ServerRuntimeConfig =
-    ServerRuntimeConfig(baseConfig, validateHeaders = true)
+  val configWithValidateFlag: Server.Config = baseConfig.validateHeaders(true).config
 
   private val app = serve
 
@@ -47,8 +46,7 @@ object ConformanceE2ESpec extends RoutesRunnableSpec {
     }.provideShared(
       Scope.default,
       DynamicServer.live,
-      ZLayer.succeed(configApp.config),
-      ZLayer.succeed(configApp),
+      ZLayer.succeed(configWithValidateFlag),
       Server.customized,
       Client.default,
       ZLayer.succeed(NettyConfig.default),
