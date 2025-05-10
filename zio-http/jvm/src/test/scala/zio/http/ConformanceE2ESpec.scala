@@ -20,9 +20,10 @@ object ConformanceE2ESpec extends RoutesRunnableSpec {
       .port(port)
       .responseCompression()
 
-  val configWithValidateFlag: Server.Config = baseConfig.validateHeaders(true).config
+  val runtimeConfig: ServerRuntimeConfig =
+    ServerRuntimeConfig(baseConfig, validateHeaders = true)
 
-  private val app = serve
+  private val app                        = serve
 
   def conformanceSpec = suite("ConformanceE2ESpec")(
     test("should return 400 Bad Request if Host header is missing") {
@@ -46,7 +47,7 @@ object ConformanceE2ESpec extends RoutesRunnableSpec {
     }.provideShared(
       Scope.default,
       DynamicServer.live,
-      ZLayer.succeed(configWithValidateFlag),
+      ZLayer.succeed(runtimeConfig)
       Server.customized,
       Client.default,
       ZLayer.succeed(NettyConfig.default),
