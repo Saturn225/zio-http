@@ -42,7 +42,7 @@ import io.netty.util.ReferenceCountUtil
 @Sharable
 private[zio] final case class ServerInboundHandler(
   appRef: RoutesRef,
-  config: Server.Config,
+  config: ServerRuntimeConfig,
 )(implicit trace: Trace)
     extends SimpleChannelInboundHandler[HttpObject](false) { self =>
 
@@ -87,12 +87,17 @@ private[zio] final case class ServerInboundHandler(
             )
             releaseRequest()
           } else {
-            val req  = makeZioRequest(ctx, jReq)
-            val exit = handler(req)
-            if (attemptImmediateWrite(ctx, req.method, exit)) {
+            val req = makeZioRequest(ctx, jReq)
+            if (config.validateHeaders && !validateHostHeader(req)) {
+              attemptFastWrite(ctx, req.method, Response.status(Status.BadRequest))
               releaseRequest()
             } else {
-              writeResponse(ctx, runtime, exit, req)(releaseRequest)
+              val exit = handler(req)
+              if (attemptImmediateWrite(ctx, req.method, exit)) {
+                releaseRequest()
+              } else {
+                writeResponse(ctx, runtime, exit, req)(releaseRequest)
+              }
             }
           }
         } finally {
@@ -106,6 +111,43 @@ private[zio] final case class ServerInboundHandler(
         throw new IllegalStateException(s"Unexpected message type: ${msg.getClass.getName}")
     }
 
+  }
+
+  private def validateHostHeader(req: Request): Boolean = {
+    val host = req.headers.getUnsafe("Host")
+    if (host != null) {
+      var i           = 0
+      var isValidHost = true
+
+      while (i < host.length && host.charAt(i) != ':') {
+        val c = host.charAt(i)
+        if (!(c.isLetterOrDigit || c == '.' || c == '-')) {
+          isValidHost = false
+          i = host.length
+        }
+        i += 1
+      }
+
+      val colonIdx    = host.indexOf(':')
+      val isValidPort =
+        if (colonIdx == -1) true
+        else {
+          var j         = colonIdx + 1
+          var portValid = true
+          while (j < host.length) {
+            if (!host.charAt(j).isDigit) {
+              portValid = false
+              j = host.length
+            }
+            j += 1
+          }
+          portValid
+        }
+
+      isValidHost && isValidPort
+    } else {
+      false
+    }
   }
 
   override def exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable): Unit =
@@ -356,7 +398,7 @@ private[zio] final case class ServerInboundHandler(
 object ServerInboundHandler {
 
   val live: ZLayer[
-    RoutesRef & Server.Config,
+    RoutesRef & ServerRuntimeConfig,
     Nothing,
     ServerInboundHandler,
   ] = {
@@ -364,7 +406,7 @@ object ServerInboundHandler {
     ZLayer.fromZIO {
       for {
         appRef <- ZIO.service[RoutesRef]
-        config <- ZIO.service[Server.Config]
+        config <- ZIO.service[ServerRuntimeConfig]
       } yield ServerInboundHandler(appRef, config)
     }
   }
