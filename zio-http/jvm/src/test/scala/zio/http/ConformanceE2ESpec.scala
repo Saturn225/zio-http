@@ -13,15 +13,12 @@ object ConformanceE2ESpec extends RoutesRunnableSpec {
 
   private val port              = 8080
   private val MaxSize           = 1024 * 10
-  val baseConfig: Server.Config =
+  val cfg: Server.Config =
     Server.Config.default
       .requestDecompression(true)
       .disableRequestStreaming(MaxSize)
       .port(port)
       .responseCompression()
-
-  val runtimeConfig: ServerRuntimeConfig =
-    ServerRuntimeConfig(baseConfig, validateHeaders = true)
 
   private val app                        = serve
 
@@ -47,8 +44,7 @@ object ConformanceE2ESpec extends RoutesRunnableSpec {
     }.provideShared(
       Scope.default,
       DynamicServer.live,
-      ZLayer.succeed(runtimeConfig),
-      Server.customized,
+      Server.customizedWith(cfg => ServerRuntimeConfig(cfg, validateHeaders = true)),
       Client.default,
       ZLayer.succeed(NettyConfig.default),
     ) @@ sequential @@ withLiveClock
