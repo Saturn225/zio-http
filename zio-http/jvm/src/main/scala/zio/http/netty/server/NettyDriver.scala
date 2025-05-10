@@ -25,6 +25,7 @@ import zio.http.Driver.StartResult
 import zio.http.netty._
 import zio.http.netty.client.NettyClientDriver
 import zio.http.{ClientDriver, Driver, Response, Routes, Server}
+import zio.http.ServerRuntimeConfig
 
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.channel._
@@ -127,6 +128,7 @@ object NettyDriver {
     implicit val trace: Trace = Trace.empty
     ZLayer.makeSome[ServerEventLoopGroups & ChannelFactory[ServerChannel] & Server.Config & NettyConfig, Driver](
       ZLayer(AppRef.empty),
+      ServerRuntimeConfig.layer,
       ServerChannelInitializer.layer,
       ServerInboundHandler.live,
       ZLayer(make),
