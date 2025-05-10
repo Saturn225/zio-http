@@ -234,7 +234,7 @@ object Server extends ServerPlatformSpecific {
         zio.Config.duration("idle-timeout").optional.withDefault(Config.default.idleTimeout) ++
         zio.Config.boolean("avoid-context-switching").withDefault(Config.default.avoidContextSwitching) ++
         zio.Config.int("so-backlog").withDefault(Config.default.soBacklog) ++
-        zio.Config.boolean("tcp-nodelay").withDefault(Config.default.tcpNoDelay) ++
+        zio.Config.boolean("tcp-nodelay").withDefault(Config.default.tcpNoDelay)
     }.map {
       case (
             sslConfig,
