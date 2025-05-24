@@ -45,6 +45,7 @@ object ServerStartSpec extends RoutesRunnableSpec {
       serve(Routes.empty).flatMap { bindPort =>
         assertZIO(ZIO.attempt(bindPort))(not(equalTo(port)))
       }.provide(
+        ZLayer.fromFunction((c: Server.Config) => ServerRuntimeConfig(c)),
         ZLayer.succeed(config),
         DynamicServer.live,
         Server.customized,
