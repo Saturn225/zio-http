@@ -211,7 +211,7 @@ object Server extends ServerPlatformSpecific {
      * header.
      */
     def validateHeaders(value: Boolean): ServerRuntimeConfig =
-      ServerRuntimeConfig(self, validateHeaders = value)
+      ServerRuntimeConfig(self, value)
 
     def webSocketConfig(webSocketConfig: WebSocketConfig): Config =
       self.copy(webSocketConfig = webSocketConfig)
@@ -597,9 +597,6 @@ object ServerRuntimeConfig {
       ServerRuntimeConfig(cfg, validate)
     }
 
-    val layer: ZLayer[Server.Config, Nothing, ServerRuntimeConfig] =
-      ZLayer.fromFunction(cfg => ServerRuntimeConfig(cfg, false))
-  
-    val configLayer: ZLayer[Any, Config.Error, ServerRuntimeConfig] =
-      ZLayer.fromZIO(ZIO.config(config))
+  val layer: ZLayer[Server.Config, Nothing, ServerRuntimeConfig] =
+    ZLayer.fromFunction(cfg => ServerRuntimeConfig(cfg, false))
 }
