@@ -19,6 +19,7 @@ object ConformanceE2ESpec extends RoutesRunnableSpec {
     .responseCompression()
     .validateHeaders(true)
 
+  private val app     = serve
   def conformanceSpec = suite("ConformanceE2ESpec")(
     test("should return 400 Bad Request if Host header is missing") {
       val routes = Handler.ok.toRoutes
