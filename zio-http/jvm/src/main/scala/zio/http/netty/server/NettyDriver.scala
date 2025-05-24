@@ -143,7 +143,6 @@ object NettyDriver {
     ZLayer.makeSome[Server.Config & NettyConfig, Driver](
       eventLoopGroup,
       serverChannelFactory,
-      ServerRuntimeConfig.layer,
       manual,
     )
   }
