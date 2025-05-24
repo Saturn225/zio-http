@@ -140,7 +140,7 @@ object NettyDriver {
       ChannelFactories.Server.fromConfig
     val eventLoopGroup: ZLayer[NettyConfig, Nothing, ServerEventLoopGroups]               = ServerEventLoopGroups.live
 
-    ZLayer.makeSome[Server.Config & NettyConfig, Driver](
+    ZLayer.makeSome[ServerRuntimeConfig & NettyConfig, Driver](
       eventLoopGroup,
       serverChannelFactory,
       manual,
