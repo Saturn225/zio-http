@@ -14,8 +14,7 @@ object ConformanceE2ESpec extends RoutesRunnableSpec {
     .disableRequestStreaming(MaxSize)
     .port(port)
     .responseCompression()
-
-  val runtimeConfig = ServerRuntimeConfig(baseConfig, validateHeaders = true)
+    .validateHeaders(true)
 
   private val app     = serve
   def conformanceSpec = suite("ConformanceE2ESpec")(
@@ -36,8 +35,7 @@ object ConformanceE2ESpec extends RoutesRunnableSpec {
       suite("app without request streaming") { app.as(List(spec)) }
     }.provideShared(
       Scope.default,
-      ZLayer.succeed(baseConfig),
-      ZLayer.succeed(runtimeConfig),
+      ZLayer.succeed(baseConfig.config),
       ZLayer.succeed(NettyConfig.default),
       DynamicServer.live,
       Server.customized,
