@@ -14,7 +14,6 @@ object ConformanceE2ESpec extends RoutesRunnableSpec {
     .disableRequestStreaming(MaxSize)
     .port(port)
     .responseCompression()
-    .validateHeaders(true)
 
   val runtimeConfig = baseConfig.validateHeaders(true)
 
