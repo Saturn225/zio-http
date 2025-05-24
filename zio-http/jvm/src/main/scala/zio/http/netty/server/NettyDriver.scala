@@ -135,7 +135,7 @@ object NettyDriver {
     )
   }
 
-  val customized: ZLayer[Server.Config & NettyConfig, Throwable, Driver] = {
+  val customized: ZLayer[ServerRuntimeConfig & NettyConfig, Throwable, Driver] = {
     val serverChannelFactory: ZLayer[NettyConfig, Nothing, ChannelFactory[ServerChannel]] =
       ChannelFactories.Server.fromConfig
     val eventLoopGroup: ZLayer[NettyConfig, Nothing, ServerEventLoopGroups]               = ServerEventLoopGroups.live
