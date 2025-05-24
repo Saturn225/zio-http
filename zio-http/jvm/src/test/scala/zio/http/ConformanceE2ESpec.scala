@@ -15,11 +15,10 @@ object ConformanceE2ESpec extends RoutesRunnableSpec {
     .port(port)
     .responseCompression()
 
+  val runtimeConfig = ServerRuntimeConfig(baseConfig, validateHeaders = true)
+
   val serverLayer: ZLayer[Any, Throwable, Server] =
-    ZLayer.succeed(baseConfig) >>>
-      ServerRuntimeConfig.layer >>>
-      ZLayer.succeed((c: ServerRuntimeConfig) => c.copy(validateHeaders = true)) >>>
-      Server.customized
+    ZLayer.succeed(runtimeConfig) >>> Server.customized
 
   private val app     = serve
   def conformanceSpec = suite("ConformanceE2ESpec")(
@@ -43,5 +42,6 @@ object ConformanceE2ESpec extends RoutesRunnableSpec {
       DynamicServer.live,
       serverLayer,
       Client.default,
+      ZLayer.succeed(NettyConfig.default),
     ) @@ sequential @@ withLiveClock
 }
