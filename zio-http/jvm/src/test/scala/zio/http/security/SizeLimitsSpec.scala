@@ -156,6 +156,7 @@ object SizeLimitsSpec extends ZIOHttpSpec {
         )
       },
     ).provide(
+      ZLayer.fromFunction((c: Server.Config) => ServerRuntimeConfig(c)),
       Server.customized,
       ZLayer.succeed(
         Server.Config.default
