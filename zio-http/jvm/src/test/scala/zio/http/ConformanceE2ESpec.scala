@@ -39,7 +39,7 @@ object ConformanceE2ESpec extends RoutesRunnableSpec {
     }.provideShared(
       Scope.default,
       DynamicServer.live,
-      ZLayer.succeed(config.config),
+      ZLayer.succeed(config),
       Server.customized,
       Client.default,
       ZLayer.succeed(NettyConfig.default),
