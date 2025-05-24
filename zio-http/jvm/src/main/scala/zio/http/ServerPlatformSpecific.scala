@@ -16,7 +16,7 @@ trait ServerPlatformSpecific {
     val tmp: ZLayer[Driver & Config, Throwable, Server] = ZLayer.suspend(base)
 
     ZLayer.makeSome[ServerRuntimeConfig & NettyConfig, Driver with Server](
-      ZLayer.fromFunction[ServerRuntimeConfig, Config](_.config),
+      ZLayer.fromFunction((runtime: ServerRuntimeConfig) => runtime.config),
       NettyDriver.customized,
       tmp,
     )
