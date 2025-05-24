@@ -16,7 +16,10 @@ object ConformanceE2ESpec extends RoutesRunnableSpec {
     .responseCompression()
 
   val serverLayer: ZLayer[Any, Throwable, Server] =
-    ZLayer.succeed(baseConfig.validateHeaders(true)) >>> Server.customized
+    ZLayer.succeed(baseConfig) >>>
+      ServerRuntimeConfig.layer >>>
+      ZLayer.succeed((c: ServerRuntimeConfig) => c.copy(validateHeaders = true)) >>>
+      Server.customized
 
   private val app     = serve
   def conformanceSpec = suite("ConformanceE2ESpec")(
