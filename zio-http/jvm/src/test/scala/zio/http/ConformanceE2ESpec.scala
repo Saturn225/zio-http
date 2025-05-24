@@ -43,6 +43,7 @@ object ConformanceE2ESpec extends RoutesRunnableSpec {
       runtimeConfigLayer,
       ZLayer.succeed(NettyConfig.default),
       DynamicServer.live,
+      ZLayer.succeed(rawConfig),
       Server.customized,
       Client.default,
     ) @@ sequential @@ withLiveClock
