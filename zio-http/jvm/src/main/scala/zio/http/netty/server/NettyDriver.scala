@@ -50,7 +50,7 @@ private[zio] final case class NettyDriver(
           .childHandler(channelInitializer)
           .option[Integer](ChannelOption.SO_BACKLOG, serverConfig.config.soBacklog)
           .childOption[JBoolean](ChannelOption.TCP_NODELAY, serverConfig.config.tcpNoDelay)
-          .bind(serverConfig.conafig.address)
+          .bind(serverConfig.config.address)
       }
       _       <- NettyFutureExecutor.scoped(chf)
       _       <- ZIO.succeed(ResourceLeakDetector.setLevel(nettyConfig.leakDetectionLevel.toNetty))
@@ -136,20 +136,21 @@ object NettyDriver {
     )
   }
 
-  val customized: ZLayer[ServerRuntimeConfig & NettyConfig, Throwable, Driver] = {
+  val customized: ZLayer[Server.Config & NettyConfig, Throwable, Driver] = {
     val serverChannelFactory: ZLayer[NettyConfig, Nothing, ChannelFactory[ServerChannel]] =
       ChannelFactories.Server.fromConfig
     val eventLoopGroup: ZLayer[NettyConfig, Nothing, ServerEventLoopGroups]               = ServerEventLoopGroups.live
 
-    ZLayer.makeSome[ServerRuntimeConfig & NettyConfig, Driver](
+    ZLayer.makeSome[Server.Config & NettyConfig, Driver](
       eventLoopGroup,
       serverChannelFactory,
+      ServerRuntimeConfig.layer,
       manual,
     )
   }
 
-  val live: ZLayer[ServerRuntimeConfig, Throwable, Driver] =
-    ZLayer.makeSome[ServerRuntimeConfig, Driver](
+  val live: ZLayer[Server.Config, Throwable, Driver] =
+    ZLayer.makeSome[Server.Config, Driver](
       ZLayer.succeed(NettyConfig.default),
       customized,
     )
