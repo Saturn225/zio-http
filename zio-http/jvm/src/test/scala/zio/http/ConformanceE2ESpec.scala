@@ -38,10 +38,10 @@ object ConformanceE2ESpec extends RoutesRunnableSpec {
       suite("app without request streaming") { app.as(List(spec)) }
     }.provideShared(
       Scope.default,
-      ZLayer.succeed(NettyConfig.default),
       DynamicServer.live,
       ZLayer.succeed(config),
       Server.customized,
       Client.default,
+      ZLayer.succeed(NettyConfig.default),
     ) @@ sequential @@ withLiveClock
 }
