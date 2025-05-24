@@ -17,17 +17,6 @@ object ConformanceE2ESpec extends RoutesRunnableSpec {
 
   val runtimeConfig = ServerRuntimeConfig(baseConfig, validateHeaders = true)
 
-  val nettyCfg = NettyConfig.default
-
-  val serverLayer: ZLayer[Any, Throwable, Server] =
-    ZLayer.make[Server](
-      ZLayer.succeed(baseConfig),
-      ZLayer.succeed(runtimeConfig),
-      ZLayer.succeed(nettyCfg),
-      DynamicServer.live,
-      Server.customized,
-    )
-
   private val app     = serve
   def conformanceSpec = suite("ConformanceE2ESpec")(
     test("should return 400 Bad Request if Host header is missing") {
@@ -47,7 +36,11 @@ object ConformanceE2ESpec extends RoutesRunnableSpec {
       suite("app without request streaming") { app.as(List(spec)) }
     }.provideShared(
       Scope.default,
-      serverLayer,
+      ZLayer.succeed(baseConfig),
+      ZLayer.succeed(runtimeConfig),
+      ZLayer.succeed(NettyConfig.default),
+      DynamicServer.live,
+      Server.customized,
       Client.default,
     ) @@ sequential @@ withLiveClock
 }
