@@ -42,5 +42,6 @@ object ConformanceE2ESpec extends RoutesRunnableSpec {
       Scope.default,
       DynamicServer.live,
       serverLayer,
-      Client.default,    ) @@ sequential @@ withLiveClock
+      Client.default,
+    ) @@ sequential @@ withLiveClock
 }
