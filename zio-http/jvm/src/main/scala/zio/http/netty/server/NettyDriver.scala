@@ -150,6 +150,7 @@ object NettyDriver {
   val live: ZLayer[Server.Config, Throwable, Driver] =
     ZLayer.makeSome[Server.Config, Driver](
       ZLayer.succeed(NettyConfig.default),
+      ServerRuntimeConfig.layer,
       customized,
     )
 }
