@@ -27,7 +27,8 @@ trait ServerPlatformSpecific {
 
     ZLayer.makeSome[Config, Server with Driver](
       NettyDriver.live,
-      ServerRuntimeConfig.layer tmp,
+      ServerRuntimeConfig.layer,
+      tmp,
     )
   }
 
