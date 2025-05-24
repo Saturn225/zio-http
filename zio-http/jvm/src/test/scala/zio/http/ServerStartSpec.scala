@@ -58,6 +58,7 @@ object ServerStartSpec extends RoutesRunnableSpec {
         .succeed(assertCompletes)
         .provide(
           Server.customized.unit,
+          ZLayer.fromFunction((c: Server.Config) => ServerRuntimeConfig(c)),
           ZLayer.succeed(Server.Config.default.port(8089)),
           ZLayer.succeed(NettyConfig.defaultWithFastShutdown),
         )
