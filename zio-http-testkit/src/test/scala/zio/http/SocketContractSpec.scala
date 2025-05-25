@@ -104,9 +104,9 @@ object SocketContractSpec extends ZIOHttpSpec {
         } yield assert(response.status)(equalTo(Status.SwitchingProtocols))
       }.provideSome[Client](
         TestServer.layer,
+        ZLayer.fromFunction(ServerRuntimeConfig.apply) >>> ZLayer.succeed(Server.Config.default.onAnyOpenPort),
         NettyDriver.customized,
         ZLayer.succeed(NettyConfig.defaultWithFastShutdown),
-        ZLayer.succeed(Server.Config.default.onAnyOpenPort),
         Scope.default,
       ).provide(Client.default),
       test("Test") {
