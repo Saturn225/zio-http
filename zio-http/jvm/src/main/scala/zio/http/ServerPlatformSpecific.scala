@@ -3,7 +3,6 @@ package zio.http
 import zio._
 
 import zio.http.Server.Config
-import zio.http.ServerRuntimeConfig
 import zio.http.netty.NettyConfig
 import zio.http.netty.server._
 
