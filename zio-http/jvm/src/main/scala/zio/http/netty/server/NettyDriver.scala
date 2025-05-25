@@ -21,8 +21,8 @@ import java.net.InetSocketAddress
 
 import zio._
 
-import zio.http.{ClientDriver, Driver, Response, Routes, Server, ServerRuntimeConfig}
 import zio.http.Driver.StartResult
+import zio.http._
 import zio.http.netty._
 import zio.http.netty.client.NettyClientDriver
 
