@@ -24,8 +24,7 @@ import zio._
 import zio.http.Driver.StartResult
 import zio.http.netty._
 import zio.http.netty.client.NettyClientDriver
-import zio.http.{ClientDriver, Driver, Response, Routes, Server}
-import zio.http.ServerRuntimeConfig
+import zio.http.{ClientDriver, Driver, Response, Routes, Server, ServerRuntimeConfig}
 
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.channel._
