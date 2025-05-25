@@ -21,7 +21,7 @@ import java.net.InetSocketAddress
 
 import zio._
 
-import zio.http.
+import zio.http._
 import zio.http.Driver.StartResult
 import zio.http.netty._
 import zio.http.netty.client.NettyClientDriver
