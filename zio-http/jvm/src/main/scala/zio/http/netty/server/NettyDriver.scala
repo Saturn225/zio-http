@@ -27,13 +27,13 @@ import zio.http.netty._
 import zio.http.netty.client.NettyClientDriver
 
 import io.netty.bootstrap.ServerBootstrap
-import io.netty.channel._
+import io.netty.channel.{Channel => NettyChannel, ChannelInitializer, ChannelOption, ServerChannel}
 import io.netty.util.ResourceLeakDetector
 
 private[zio] final case class NettyDriver(
   appRef: RoutesRef,
   channelFactory: ChannelFactory[ServerChannel],
-  channelInitializer: ChannelInitializer[Channel],
+  channelInitializer: ChannelInitializer[NettyChannel],
   serverInboundHandler: ServerInboundHandler,
   eventLoopGroups: ServerEventLoopGroups,
   serverConfig: ServerRuntimeConfig,
@@ -96,7 +96,7 @@ object NettyDriver {
   val make: ZIO[
     RoutesRef
       & ChannelFactory[ServerChannel]
-      & ChannelInitializer[Channel]
+      & ChannelInitializer[NettyChannel]
       & ServerEventLoopGroups
       & ServerRuntimeConfig
       & NettyConfig
@@ -107,7 +107,7 @@ object NettyDriver {
     for {
       app   <- ZIO.service[RoutesRef]
       cf    <- ZIO.service[ChannelFactory[ServerChannel]]
-      cInit <- ZIO.service[ChannelInitializer[Channel]]
+      cInit <- ZIO.service[ChannelInitializer[NettyChannel]]
       elg   <- ZIO.service[ServerEventLoopGroups]
       sc    <- ZIO.service[ServerRuntimeConfig]
       nsc   <- ZIO.service[NettyConfig]
