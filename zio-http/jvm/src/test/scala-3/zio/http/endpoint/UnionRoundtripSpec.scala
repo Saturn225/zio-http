@@ -318,6 +318,7 @@ object UnionRoundtripSpec extends ZIOHttpSpec {
         )
       },
     ).provide(
+      ServerRuntimeConfig.layer,
       Server.customized,
       ZLayer.succeed(Server.Config.default.onAnyOpenPort.enableRequestStreaming),
       Client.customized.map(env => ZEnvironment(env.get @@ clientDebugAspect)),
