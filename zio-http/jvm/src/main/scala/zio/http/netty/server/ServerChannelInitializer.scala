@@ -21,11 +21,10 @@ import java.util.concurrent.TimeUnit
 import zio._
 import zio.stacktracer.TracingImplicits.disableAutoTrace
 
-import zio.http.Server
-import zio.http.ServerRuntimeConfig
 import zio.http.Server.RequestStreaming
 import zio.http.netty.model.Conversions
 import zio.http.netty.{HybridContentLengthHandler, Names}
+import zio.http.{Server, ServerRuntimeConfig}
 
 import io.netty.channel.ChannelHandler.Sharable
 import io.netty.channel._
