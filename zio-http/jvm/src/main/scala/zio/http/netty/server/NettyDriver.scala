@@ -27,7 +27,7 @@ import zio.http.netty._
 import zio.http.netty.client.NettyClientDriver
 
 import io.netty.bootstrap.ServerBootstrap
-import io.netty.channel.{Channel => NettyChannel, ChannelInitializer, ChannelOption, ServerChannel}
+import io.netty.channel.{Channel => NettyChannel, ChannelFactory, ChannelInitializer, ChannelOption, ServerChannel}
 import io.netty.util.ResourceLeakDetector
 
 private[zio] final case class NettyDriver(
