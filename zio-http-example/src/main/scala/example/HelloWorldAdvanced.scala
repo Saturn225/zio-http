@@ -34,10 +34,9 @@ object HelloWorldAdvanced extends ZIOAppDefault {
       .maxThreads(nThreads)
     val configLayer         = ZLayer.succeed(config)
     val nettyConfigLayer    = ZLayer.succeed(nettyConfig)
-    val serverRuntimeConfig = configLayer.map(ServerRuntimeConfig(_))
 
     (fooBar ++ app)
       .serve[Any]
-      .provide(serverRuntimeConfig, nettyConfigLayer, Server.customized)
+      .provide(configLayer, nettyConfigLayer, Server.customized)
   }
 }
