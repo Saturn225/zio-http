@@ -45,7 +45,7 @@ object RoutesPrecedentsSpec extends ZIOSpecDefault {
           ZLayer.succeed(new MyServiceLive(code)),
         )
       }.provide(
-        ZLayer.fromFunction(ServerRuntimeConfig.apply) >>> ZLayer.succeed(Server.Config.default.onAnyOpenPort),
+        ZLayer.succeed(Server.Config.default.onAnyOpenPort) >>> ZLayer.fromFunction(ServerRuntimeConfig(_)),
         TestServer.layer,
         Client.default,
         NettyDriver.customized,
