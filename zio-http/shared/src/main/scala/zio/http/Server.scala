@@ -438,7 +438,8 @@ object Server extends ServerPlatformSpecific {
           tcpNoDelay = tcpNoDelay,
           validateHeaders = validateHeaders,
         )
-    }    val default: Config = new Config(
+    }    
+    val default: Config = new Config(
       sslConfig = None,
       address = new InetSocketAddress(8080),
       acceptContinue = false,
