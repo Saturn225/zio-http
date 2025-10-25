@@ -44,9 +44,8 @@ object PlainTextBenchmarkServer extends ZIOAppDefault {
 
   private val configLayer              = ZLayer.succeed(config)
   private val nettyConfigLayer         = ZLayer.succeed(nettyConfig)
-  private val serverRuntimeConfigLayer = configLayer.flatMap(env => ZLayer.succeed(Config(env.get)))
 
   override val run: ZIO[Environment with ZIOAppArgs with Scope, Any, Any] =
-    Server.serve(routes).provide(serverRuntimeConfigLayer, nettyConfigLayer, Server.customized)
+    Server.serve(routes).provide(configLayer, nettyConfigLayer, Server.customized)
 
 }
