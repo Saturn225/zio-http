@@ -230,7 +230,7 @@ object WebSocketSpec extends RoutesRunnableSpec {
       .provideSome[DynamicServer & Server & Client](Scope.default)
       .provideShared(
         DynamicServer.live,
-        ZLayer.fromFunction((c: Server.Config) => ServerRuntimeConfig(c)),
+        ZLayer.fromFunction((c: Server.Config) => Config(c)),
         ZLayer.succeed(Server.Config.default.onAnyOpenPort.enableRequestStreaming),
         testNettyServerConfig,
         Server.customized,

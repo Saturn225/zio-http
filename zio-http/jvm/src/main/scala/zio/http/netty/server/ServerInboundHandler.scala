@@ -42,7 +42,7 @@ import io.netty.util.ReferenceCountUtil
 @Sharable
 private[zio] final case class ServerInboundHandler(
   appRef: RoutesRef,
-  config: ServerRuntimeConfig,
+  config: Config,
 )(implicit trace: Trace)
     extends SimpleChannelInboundHandler[HttpObject](false) { self =>
 
@@ -405,7 +405,7 @@ private[zio] final case class ServerInboundHandler(
 object ServerInboundHandler {
 
   val live: ZLayer[
-    RoutesRef & ServerRuntimeConfig,
+    RoutesRef & Config,
     Nothing,
     ServerInboundHandler,
   ] = {
@@ -413,7 +413,7 @@ object ServerInboundHandler {
     ZLayer.fromZIO {
       for {
         appRef <- ZIO.service[RoutesRef]
-        config <- ZIO.service[ServerRuntimeConfig]
+        config <- ZIO.service[Config]
       } yield ServerInboundHandler(appRef, config)
     }
   }

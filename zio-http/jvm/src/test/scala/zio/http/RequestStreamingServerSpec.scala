@@ -111,7 +111,7 @@ object RequestStreamingServerSpec extends RoutesRunnableSpec {
       .provideShared(
         DynamicServer.live,
         ZLayer.succeed(configAppWithRequestStreaming),
-        ZLayer.fromFunction((c: Server.Config) => ServerRuntimeConfig(c)),
+        ZLayer.fromFunction((c: Server.Config) => Config(c)),
         Server.customized,
         ZLayer.succeed(NettyConfig.defaultWithFastShutdown),
         Client.default,

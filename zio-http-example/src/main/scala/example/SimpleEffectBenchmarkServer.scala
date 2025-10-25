@@ -41,7 +41,7 @@ object SimpleEffectBenchmarkServer extends ZIOAppDefault {
 
   private val configLayer              = ZLayer.succeed(config)
   private val nettyConfigLayer         = ZLayer.succeed(nettyConfig)
-  private val serverRuntimeConfigLayer = configLayer.flatMap(env => ZLayer.succeed(ServerRuntimeConfig(env.get)))
+  private val serverRuntimeConfigLayer = configLayer.flatMap(env => ZLayer.succeed(Config(env.get)))
 
   override val run =
     Server.serve(routes).provide(serverRuntimeConfigLayer, nettyConfigLayer, Server.customized)

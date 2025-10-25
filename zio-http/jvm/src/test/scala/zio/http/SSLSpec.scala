@@ -118,7 +118,7 @@ object SSLSpec extends ZIOHttpSpec {
         ),
       ),
   ).provideShared(
-    ZLayer.fromFunction((c: Server.Config) => ServerRuntimeConfig(c)),
+    ZLayer.fromFunction((c: Server.Config) => Config(c)),
     Server.customized,
     ZLayer.succeed(NettyConfig.defaultWithFastShutdown),
     ZLayer.succeed(config),

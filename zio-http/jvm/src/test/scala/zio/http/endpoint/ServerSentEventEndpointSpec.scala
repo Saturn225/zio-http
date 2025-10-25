@@ -145,7 +145,7 @@ object ServerSentEventEndpointSpec extends ZIOHttpSpec {
       },
     )
       .provideSomeLayer[Client & Server.Config & NettyConfig](
-        (ZLayer.fromFunction[Server.Config => ServerRuntimeConfig](ServerRuntimeConfig(_)) ++ ZLayer
+        (ZLayer.fromFunction[Server.Config => Config](Config(_)) ++ ZLayer
           .service[NettyConfig]) >>> Server.customized,
       )
       .provideShared(

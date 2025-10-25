@@ -55,24 +55,114 @@ trait Server {
 }
 
 object Server extends ServerPlatformSpecific {
-  final case class Config(
-    sslConfig: Option[SSLConfig],
-    address: InetSocketAddress,
-    acceptContinue: Boolean,
-    keepAlive: Boolean,
-    requestDecompression: Decompression,
-    responseCompression: Option[ResponseCompressionConfig],
-    requestStreaming: RequestStreaming,
-    maxInitialLineLength: Int,
-    maxHeaderSize: Int,
-    logWarningOnFatalError: Boolean,
-    gracefulShutdownTimeout: Duration,
-    webSocketConfig: WebSocketConfig,
-    idleTimeout: Option[Duration],
-    avoidContextSwitching: Boolean,
-    soBacklog: Int,
-    tcpNoDelay: Boolean,
+  final class Config(
+    val sslConfig: Option[SSLConfig],
+    val address: InetSocketAddress,
+    val acceptContinue: Boolean,
+    val keepAlive: Boolean,
+    val requestDecompression: Decompression,
+    val responseCompression: Option[ResponseCompressionConfig],
+    val requestStreaming: RequestStreaming,
+    val maxInitialLineLength: Int,
+    val maxHeaderSize: Int,
+    val logWarningOnFatalError: Boolean,
+    val gracefulShutdownTimeout: Duration,
+    val webSocketConfig: WebSocketConfig,
+    val idleTimeout: Option[Duration],
+    val avoidContextSwitching: Boolean,
+    val soBacklog: Int,
+    val tcpNoDelay: Boolean,
+    val validateHeaders: Boolean = false,
   ) { self =>
+
+    def copy(
+      sslConfig: Option[SSLConfig] = this.sslConfig,
+      address: InetSocketAddress = this.address,
+      acceptContinue: Boolean = this.acceptContinue,
+      keepAlive: Boolean = this.keepAlive,
+      requestDecompression: Decompression = this.requestDecompression,
+      responseCompression: Option[ResponseCompressionConfig] = this.responseCompression,
+      requestStreaming: RequestStreaming = this.requestStreaming,
+      maxInitialLineLength: Int = this.maxInitialLineLength,
+      maxHeaderSize: Int = this.maxHeaderSize,
+      logWarningOnFatalError: Boolean = this.logWarningOnFatalError,
+      gracefulShutdownTimeout: Duration = this.gracefulShutdownTimeout,
+      webSocketConfig: WebSocketConfig = this.webSocketConfig,
+      idleTimeout: Option[Duration] = this.idleTimeout,
+      avoidContextSwitching: Boolean = this.avoidContextSwitching,
+      soBacklog: Int = this.soBacklog,
+      tcpNoDelay: Boolean = this.tcpNoDelay,
+      validateHeaders: Boolean = this.validateHeaders,
+    ): Config = new Config(
+      sslConfig,
+      address,
+      acceptContinue,
+      keepAlive,
+      requestDecompression,
+      responseCompression,
+      requestStreaming,
+      maxInitialLineLength,
+      maxHeaderSize,
+      logWarningOnFatalError,
+      gracefulShutdownTimeout,
+      webSocketConfig,
+      idleTimeout,
+      avoidContextSwitching,
+      soBacklog,
+      tcpNoDelay,
+      validateHeaders,
+    )
+
+    override def equals(obj: Any): Boolean = obj match {
+      case that: Config =>
+        this.sslConfig == that.sslConfig &&
+        this.address == that.address &&
+        this.acceptContinue == that.acceptContinue &&
+        this.keepAlive == that.keepAlive &&
+        this.requestDecompression == that.requestDecompression &&
+        this.responseCompression == that.responseCompression &&
+        this.requestStreaming == that.requestStreaming &&
+        this.maxInitialLineLength == that.maxInitialLineLength &&
+        this.maxHeaderSize == that.maxHeaderSize &&
+        this.logWarningOnFatalError == that.logWarningOnFatalError &&
+        this.gracefulShutdownTimeout == that.gracefulShutdownTimeout &&
+        this.webSocketConfig == that.webSocketConfig &&
+        this.idleTimeout == that.idleTimeout &&
+        this.avoidContextSwitching == that.avoidContextSwitching &&
+        this.soBacklog == that.soBacklog &&
+        this.tcpNoDelay == that.tcpNoDelay &&
+        this.validateHeaders == that.validateHeaders
+      case _ => false
+    }
+
+    override def hashCode(): Int = {
+      val state = Seq(
+        sslConfig,
+        address,
+        acceptContinue,
+        keepAlive,
+        requestDecompression,
+        responseCompression,
+        requestStreaming,
+        maxInitialLineLength,
+        maxHeaderSize,
+        logWarningOnFatalError,
+        gracefulShutdownTimeout,
+        webSocketConfig,
+        idleTimeout,
+        avoidContextSwitching,
+        soBacklog,
+        tcpNoDelay,
+        validateHeaders,
+      )
+      state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
+    }
+
+    override def toString: String = {
+      s"Config($sslConfig, $address, $acceptContinue, $keepAlive, $requestDecompression, $responseCompression, " +
+      s"$requestStreaming, $maxInitialLineLength, $maxHeaderSize, $logWarningOnFatalError, $gracefulShutdownTimeout, " +
+      s"$webSocketConfig, $idleTimeout, $avoidContextSwitching, $soBacklog, $tcpNoDelay, $validateHeaders)"
+    }
 
     /**
      * Configure the server to use HttpServerExpectContinueHandler to send a 100
@@ -210,14 +300,88 @@ object Server extends ServerPlatformSpecific {
      * enabled, the server will validate incoming headers such as the Host
      * header.
      */
-    def validateHeaders(value: Boolean): ServerRuntimeConfig =
-      ServerRuntimeConfig(self, value)
+    def validateHeaders(value: Boolean): Config =
+      self.copy(validateHeaders = value)
 
     def webSocketConfig(webSocketConfig: WebSocketConfig): Config =
       self.copy(webSocketConfig = webSocketConfig)
   }
-
   object Config {
+    // Apply method for backward compatibility
+    def apply(
+      sslConfig: Option[SSLConfig],
+      address: InetSocketAddress,
+      acceptContinue: Boolean,
+      keepAlive: Boolean,
+      requestDecompression: Decompression,
+      responseCompression: Option[ResponseCompressionConfig],
+      requestStreaming: RequestStreaming,
+      maxInitialLineLength: Int,
+      maxHeaderSize: Int,
+      logWarningOnFatalError: Boolean,
+      gracefulShutdownTimeout: Duration,
+      webSocketConfig: WebSocketConfig,
+      idleTimeout: Option[Duration],
+      avoidContextSwitching: Boolean,
+      soBacklog: Int,
+      tcpNoDelay: Boolean,
+    ): Config = new Config(
+      sslConfig,
+      address,
+      acceptContinue,
+      keepAlive,
+      requestDecompression,
+      responseCompression,
+      requestStreaming,
+      maxInitialLineLength,
+      maxHeaderSize,
+      logWarningOnFatalError,
+      gracefulShutdownTimeout,
+      webSocketConfig,
+      idleTimeout,
+      avoidContextSwitching,
+      soBacklog,
+      tcpNoDelay,      
+      validateHeaders,
+    )
+
+    // Unapply method for pattern matching backward compatibility
+    def unapply(config: Config): Option[(
+      Option[SSLConfig],
+      InetSocketAddress,
+      Boolean,
+      Boolean,
+      Decompression,
+      Option[ResponseCompressionConfig],
+      RequestStreaming,
+      Int,
+      Int,
+      Boolean,
+      Duration,
+      WebSocketConfig,
+      Option[Duration],
+      Boolean,
+      Int,
+      Boolean,
+    )] = Some((
+      config.sslConfig,
+      config.address,
+      config.acceptContinue,
+      config.keepAlive,
+      config.requestDecompression,
+      config.responseCompression,
+      config.requestStreaming,
+      config.maxInitialLineLength,
+      config.maxHeaderSize,
+      config.logWarningOnFatalError,
+      config.gracefulShutdownTimeout,
+      config.webSocketConfig,
+      config.idleTimeout,
+      config.avoidContextSwitching,
+      config.soBacklog,
+      config.tcpNoDelay,
+    ))
+
     def config: zio.Config[Config] = {
       SSLConfig.config.optional ++
         zio.Config.string("binding-host").optional ++
@@ -234,7 +398,8 @@ object Server extends ServerPlatformSpecific {
         zio.Config.duration("idle-timeout").optional.withDefault(Config.default.idleTimeout) ++
         zio.Config.boolean("avoid-context-switching").withDefault(Config.default.avoidContextSwitching) ++
         zio.Config.int("so-backlog").withDefault(Config.default.soBacklog) ++
-        zio.Config.boolean("tcp-nodelay").withDefault(Config.default.tcpNoDelay)
+        zio.Config.boolean("tcp-nodelay").withDefault(Config.default.tcpNoDelay) ++
+        zio.Config.boolean("validate-headers").withDefault(Config.default.validateHeaders)
     }.map {
       case (
             sslConfig,
@@ -253,6 +418,7 @@ object Server extends ServerPlatformSpecific {
             avoidCtxSwitch,
             soBacklog,
             tcpNoDelay,
+            validateHeaders,
           ) =>
         default.copy(
           sslConfig = sslConfig,
@@ -270,10 +436,9 @@ object Server extends ServerPlatformSpecific {
           avoidContextSwitching = avoidCtxSwitch,
           soBacklog = soBacklog,
           tcpNoDelay = tcpNoDelay,
+          validateHeaders = validateHeaders,
         )
-    }
-
-    val default: Config = Config(
+    }    val default: Config = new Config(
       sslConfig = None,
       address = new InetSocketAddress(8080),
       acceptContinue = false,
@@ -290,6 +455,7 @@ object Server extends ServerPlatformSpecific {
       avoidContextSwitching = false,
       soBacklog = 100,
       tcpNoDelay = true,
+      validateHeaders = false,
     )
 
     final case class ResponseCompressionConfig(
@@ -582,21 +748,5 @@ object Server extends ServerPlatformSpecific {
       } yield ()
 
     override def port: UIO[Int] = serverStarted.await.orDie
-
   }
-}
-
-final case class ServerRuntimeConfig(
-  config: Server.Config,
-  validateHeaders: Boolean = false,
-)
-
-object ServerRuntimeConfig {
-  def config: zio.Config[ServerRuntimeConfig] =
-    (Server.Config.config ++ zio.Config.boolean("validate-headers").withDefault(false)).map { case (cfg, validate) =>
-      ServerRuntimeConfig(cfg, validate)
-    }
-
-  val layer: ZLayer[Server.Config, Nothing, ServerRuntimeConfig] =
-    ZLayer.fromFunction(cfg => ServerRuntimeConfig(cfg, false))
 }

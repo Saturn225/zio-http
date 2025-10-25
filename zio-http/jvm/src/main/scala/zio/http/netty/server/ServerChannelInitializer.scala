@@ -24,7 +24,7 @@ import zio.stacktracer.TracingImplicits.disableAutoTrace
 import zio.http.Server.RequestStreaming
 import zio.http.netty.model.Conversions
 import zio.http.netty.{HybridContentLengthHandler, Names}
-import zio.http.{Server, ServerRuntimeConfig}
+import zio.http.{Server, Config}
 
 import io.netty.channel.ChannelHandler.Sharable
 import io.netty.channel._
@@ -38,7 +38,7 @@ import io.netty.handler.timeout.ReadTimeoutHandler
  */
 @Sharable
 private[zio] final case class ServerChannelInitializer(
-  cfg: ServerRuntimeConfig,
+  cfg: Config,
   reqHandler: ChannelInboundHandler,
 ) extends ChannelInitializer[Channel] {
 
@@ -116,10 +116,10 @@ object ServerChannelInitializer {
   implicit val trace: Trace = Trace.empty
 
   val layer
-    : ZLayer[SimpleChannelInboundHandler[HttpObject] with ServerRuntimeConfig, Nothing, ServerChannelInitializer] =
+    : ZLayer[SimpleChannelInboundHandler[HttpObject] with Config, Nothing, ServerChannelInitializer] =
     ZLayer.fromZIO {
       for {
-        cfg     <- ZIO.service[ServerRuntimeConfig]
+        cfg     <- ZIO.service[Config]
         handler <- ZIO.service[SimpleChannelInboundHandler[HttpObject]]
       } yield ServerChannelInitializer(cfg, handler)
     }

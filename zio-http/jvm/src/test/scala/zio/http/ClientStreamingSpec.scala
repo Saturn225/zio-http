@@ -331,7 +331,7 @@ object ClientStreamingSpec extends RoutesRunnableSpec {
               )
               .idleTimeout(100.seconds),
           ),
-          ZLayer.fromFunction((c: Server.Config) => ServerRuntimeConfig(c)),
+          ZLayer.fromFunction((c: Server.Config) => Config(c)),
           Server.customized,
         )
         .fork

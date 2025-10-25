@@ -156,7 +156,7 @@ object SizeLimitsSpec extends ZIOHttpSpec {
         )
       },
     ).provide(
-      ZLayer.fromFunction((c: Server.Config) => ServerRuntimeConfig(c)),
+      ZLayer.fromFunction((c: Server.Config) => Config(c)),
       Server.customized,
       ZLayer.succeed(
         Server.Config.default
@@ -233,7 +233,7 @@ object SizeLimitsSpec extends ZIOHttpSpec {
         )
       },
     ).provide(
-      ZLayer.fromFunction((c: Server.Config) => ServerRuntimeConfig(c)),
+      ZLayer.fromFunction((c: Server.Config) => Config(c)),
       ZLayer.succeed(Server.Config.default),
       Server.customized,
       ZLayer.succeed(NettyConfig.defaultWithFastShutdown),

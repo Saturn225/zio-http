@@ -85,7 +85,7 @@ object ExceptionSpec extends ZIOSpecDefault {
     },
   ).provide(
     Scope.default,
-    ZLayer.fromFunction((c: Server.Config) => ServerRuntimeConfig(c)),
+    ZLayer.fromFunction((c: Server.Config) => Config(c)),
     Server.customized,
     ZLayer.succeed(
       Server.Config.default,

@@ -36,7 +36,7 @@ package object internal {
 
   val serverTestLayer: ZLayer[Any, Throwable, Server.Config with Server] =
     ZLayer.make[Server.Config with Server](
-      ZLayer.fromFunction((c: Server.Config) => ServerRuntimeConfig(c)),
+      ZLayer.fromFunction((c: Server.Config) => Config(c)),
       testServerConfig,
       testNettyServerConfig,
       Server.customized,
