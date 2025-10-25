@@ -45,7 +45,6 @@ object RoutesPrecedentsSpec extends ZIOSpecDefault {
           ZLayer.succeed(new MyServiceLive(code)),
         )
       }.provide(
-        Config.layer,
         ZLayer.succeed(Server.Config.default.onAnyOpenPort),
         TestServer.layer,
         Client.default,
