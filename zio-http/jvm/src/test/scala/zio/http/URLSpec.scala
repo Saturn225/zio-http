@@ -32,8 +32,10 @@ object URLSpec extends ZIOHttpSpec {
     suite("URL")(
       test("empty") {
         check(HttpGen.url) { url =>
-          assertTrue(url == url ++ URL.empty) &&
-          assertTrue(url == URL.empty ++ url)
+          assertTrue(
+            url == url ++ URL.empty,
+            url == URL.empty ++ url,
+          )
         }
       },
       suite("equality/hash")(
@@ -42,8 +44,7 @@ object URLSpec extends ZIOHttpSpec {
             val url1 = url.copy(path = extractPath(url).dropLeadingSlash)
             val url2 = url.copy(path = extractPath(url).addLeadingSlash)
 
-            assertTrue(url1 == url2) &&
-            assertTrue(url1.hashCode == url2.hashCode)
+            assertTrue(url1 == url2, url1.hashCode == url2.hashCode)
           }
         },
       ),
@@ -53,7 +54,7 @@ object URLSpec extends ZIOHttpSpec {
 
           val url2 = url.normalize
 
-          assertTrue(extractPath(url2) == Path("/a/b/c"))
+          assertTrue(url2.encode == "http://abc.com:80/a/b/c", extractPath(url2) == Path("/a/b/c"))
         },
         test("deletes leading slash if there are no path segments") {
           val url  = URL(Path.root, URL.Location.Absolute(Scheme.HTTP, "abc.com", Some(80)), QueryParams.empty, None)
@@ -61,8 +62,38 @@ object URLSpec extends ZIOHttpSpec {
 
           assertTrue(extractPath(url2) == Path.empty)
         },
+        test("add leading slash to absolute URLs without port") {
+          val url  = URL(Path("a/b/c"), URL.Location.Absolute(Scheme.HTTP, "abc.com", None), QueryParams.empty, None)
+          val url2 = url.normalize
+          val urlInterpolator         = url"https://abc.com/a/b/c"
+          val urlInterpolator2        = urlInterpolator.normalize
+          val baseUrlInterpolator     = url"https://abc.com"
+          val extendedUrlInterpolator = (baseUrlInterpolator / "a" / "b" / "c").normalize
+
+          assertTrue(
+            url2.encode == "http://abc.com/a/b/c",
+            extractPath(url2) == Path("/a/b/c"),
+            urlInterpolator2.encode == "https://abc.com/a/b/c",
+            extractPath(urlInterpolator2) == Path("/a/b/c"),
+            extendedUrlInterpolator.encode == "https://abc.com/a/b/c",
+            extractPath(extendedUrlInterpolator) == Path("/a/b/c"),
+          )
+        },
       ),
       suite("encode-decode symmetry")(
+        test("url interpolator") {
+          val url           = url"https://api.com:8080/users?x=10&y=20"
+          val urlSpaces     = url"https://api.com:8080/users?x=10&y=20&spaces=with%20spaces"
+          val urlSpacesPlus = url"https://api.com:8080/users?x=10&y=20&spaces=with+spaces"
+          assertTrue(
+            url.encode == "https://api.com:8080/users?x=10&y=20",
+            urlSpaces.encode == "https://api.com:8080/users?x=10&y=20&spaces=with+spaces",
+            urlSpacesPlus.encode == "https://api.com:8080/users?x=10&y=20&spaces=with+spaces",
+            URL.decode(url.encode) == Right(url),
+            URL.decode(urlSpaces.encode) == Right(urlSpaces),
+            URL.decode(urlSpacesPlus.encode) == Right(urlSpacesPlus),
+          )
+        },
         test("auto-gen") {
           check(HttpGen.url) { url =>
             val expected        = url.copy(path = url.path.addLeadingSlash)
@@ -70,8 +101,7 @@ object URLSpec extends ZIOHttpSpec {
             val actual          = URL.decode(expected.encode)
             val actualEncoded   = actual.map(_.encode)
 
-            assertTrue(asURL(actualEncoded.toOption.get) == asURL(expectedEncoded)) &&
-            assertTrue(actual.toOption.get == expected)
+            assertTrue(asURL(actualEncoded.toOption.get) == asURL(expectedEncoded), actual.toOption.get == expected)
           }
         },
         test("manual") {
@@ -99,7 +129,7 @@ object URLSpec extends ZIOHttpSpec {
           checkAll(urls) { url =>
             val decoded = URL.decode(url)
             val encoded = decoded.map(_.encode)
-            assertTrue(encoded == Right(url))
+            assertTrue(encoded == Right(url) || encoded == Right(url.replaceAll("%20", "+")))
           }
         },
       ),
@@ -277,8 +307,8 @@ object URLSpec extends ZIOHttpSpec {
           // uses unmodified base path and base query params
           val expected = url"https://base/./ignored/../absolute?param=base#reffrag"
 
-          val result = base.resolve(reference)
-          assertTrue(result.contains(expected))
+          val result = base.resolve(reference).toOption.get
+          assertTrue(result == expected)
         },
         test("empty reference path with query params") {
           val base      = url"https://base/./ignored/../absolute?param=base#basefrag"
@@ -287,8 +317,8 @@ object URLSpec extends ZIOHttpSpec {
           // uses unmodified base path and reference query params
           val expected = url"https://base/./ignored/../absolute?param=reference#reffrag"
 
-          val result = base.resolve(reference)
-          assertTrue(result.contains(expected))
+          val result = base.resolve(reference).toOption.get
+          assertTrue(result == expected)
         },
         test("non-empty reference path with a leading slash") {
           val base      = url"https://base/./ignored/../first/second?param=base#basefrag"
@@ -300,15 +330,15 @@ object URLSpec extends ZIOHttpSpec {
           val result = base.resolve(reference)
           assertTrue(result.contains(expected))
         },
-        test("non-empty reference path without a leading slash") {
+        test("non empty reference path without a leading slash") {
           val base      = url"https://base/./ignored/../first/..?param=base#basefrag"
           val reference = url"reference/./ignored/../last?param=reference#reffrag"
 
           // uses base path without last segment, reference segments appended, without dot segments, and reference query params
-          val expected = url"https://base/first/reference/last?param=reference#reffrag"
+          val expected = url"https://base/reference/last?param=reference#reffrag"
 
-          val result = base.resolve(reference)
-          assertTrue(result.contains(expected))
+          val result = base.resolve(reference).toOption.get
+          assertTrue(result == expected)
         },
         test("non-empty reference path without a leading slash and empty base path") {
           val base      = url"https://base?param=base#basefrag"

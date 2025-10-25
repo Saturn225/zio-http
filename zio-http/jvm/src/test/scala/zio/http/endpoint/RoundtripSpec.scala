@@ -62,6 +62,15 @@ object RoundtripSpec extends ZIOHttpSpec {
     implicit val schema: Schema[Post] = DeriveSchema.gen[Post]
   }
 
+  case class TestGroups(groups: Set[String])
+
+  object TestGroups {
+    implicit val schema: Schema[TestGroups] = Schema[String].transform(
+      (s: String) => TestGroups(s.split(",").toSet),
+      (tg: TestGroups) => tg.groups.mkString(","),
+    )
+  }
+
   case class Age(@validate(Validation.greaterThan(18)) age: Int)
   object Age {
     implicit val schema: Schema[Age] = DeriveSchema.gen[Age]
@@ -144,13 +153,10 @@ object RoundtripSpec extends ZIOHttpSpec {
   ): ZIO[ZClient[Any, Any, Body, Throwable, Response] with Server with Scope, Out, TestResult] =
     for {
       port <- Server.installRoutes(route)
-      executorLayer = ZLayer(ZIO.service[ZClient[Any, Any, Body, Throwable, Response]].map(makeExecutor(_, port)))
+      executorLayer = ZLayer(ZIO.serviceWith[ZClient[Any, Any, Body, Throwable, Response]](makeExecutor(_, port)))
       out    <- ZIO
-        .service[EndpointExecutor[Any, Unit, Any]]
-        .flatMap { executor =>
-          executor.apply(endpoint.apply(in))
-        }
-        .provideSome[ZClient[Any, Any, Body, Throwable, Response] with Scope](executorLayer)
+        .serviceWithZIO[EndpointExecutor[Any, Unit, Any]](_.apply(endpoint.apply(in)))
+        .provideSome[ZClient[Any, Any, Body, Throwable, Response]](executorLayer)
         .flip
       result <- errorF(out)
     } yield result
@@ -162,6 +168,10 @@ object RoundtripSpec extends ZIOHttpSpec {
     strings: Chunk[String] = Chunk("defaultString"),
   )
   implicit val paramsSchema: Schema[Params]                                         = DeriveSchema.gen[Params]
+
+  case class HeaderWrapper(value: String)
+
+  implicit val headerWrapperSchema: Schema[HeaderWrapper] = Schema[String].transform(HeaderWrapper.apply, _.value)
 
   def spec: Spec[Any, Any] =
     suiteAll("RoundtripSpec") {
@@ -206,6 +216,32 @@ object RoundtripSpec extends ZIOHttpSpec {
           Params(1, None, "string", Chunk("")),
         )
       }
+      test("Optional header") {
+        val endpoint = Endpoint(GET / "query")
+          .header(HeaderCodec.headerAs[String]("x-rd-modified-order-id").optional)
+          .out[Option[String]]
+        val route    = endpoint.implementPurely { header => header }
+
+        testEndpoint(
+          endpoint,
+          Routes(route),
+          Some("hallo"),
+          Some("hallo"),
+        )
+      }
+      test("Transformed schema header") {
+        val endpoint = Endpoint(GET / "query")
+          .header[HeaderWrapper]("x-rd-modified-order-id")
+          .out[HeaderWrapper]
+        val route    = endpoint.implementPurely { header => header }
+
+        testEndpoint(
+          endpoint,
+          Routes(route),
+          HeaderWrapper("hallo"),
+          HeaderWrapper("hallo"),
+        )
+      }
       test("simple get with protobuf encoding via explicit media type") {
         val usersPostAPI =
           Endpoint(GET / "users" / int("userId") / "posts" / int("postId"))
@@ -247,6 +283,40 @@ object RoundtripSpec extends ZIOHttpSpec {
           (10, 20, Header.Accept(MediaType.parseCustomMediaType("application/protobuf").get)),
           Post(20, "title", "body", 10),
         ) && assertZIO(TestConsole.output)(contains("ContentType: application/protobuf\n"))
+      }
+      test("simple get with collection header") {
+        val api = Endpoint(GET / "users")
+          .header[Set[String]]("test-groups")
+          .out[Set[String]]
+
+        val handler =
+          api.implementPurely(Predef.identity)
+
+        testEndpoint(
+          api,
+          Routes(handler),
+          Set("a", "b", "c"),
+          Set("a", "b", "c"),
+        )
+      }
+      test("simple get with transformed collection header") {
+        implicit val testGroupsSchema: Schema[Set[String]] = Schema[String].transform(
+          (s: String) => s.split(",").toSet,
+          (tg: Set[String]) => tg.mkString(","),
+        )
+        val api                                            = Endpoint(GET / "users")
+          .header[Set[String]]("test-groups")
+          .out[Set[String]]
+
+        val handler =
+          api.implementPurely(Predef.identity)
+
+        testEndpoint(
+          api,
+          Routes(handler),
+          Set("a", "b", "c"),
+          Set("a", "b", "c"),
+        )
       }
       test("simple get with optional query params") {
         val api =
@@ -305,6 +375,29 @@ object RoundtripSpec extends ZIOHttpSpec {
           ),
         )
       }
+      test("simple get with case class in return and header codec accepting media type text plain") {
+        val usersPostAPI =
+          Endpoint(GET / "users" / "posts")
+            .out[Post]
+            .header(HeaderCodec.accept)
+
+        val usersPostHandler =
+          usersPostAPI.implementHandler {
+            Handler.fromFunction(_ => Post(1, "title", "body", 3))
+          }
+
+        testEndpointCustomRequestZIO(
+          usersPostHandler.toRoutes,
+          Request(
+            method = GET,
+            url = URL(path = Path("/users/posts")),
+            headers = Headers(Header.Accept(MediaType.text.`plain`)),
+          ),
+          response =>
+            response.body.asString.map(s => assertTrue(s.contains("Unexpected error happened when encoding response"))),
+        )
+      }
+
       test("throwing error in handler") {
         val api = Endpoint(POST / string("id") / "xyz" / string("name") / "abc")
           .query(HttpCodec.query[String]("details"))
@@ -473,10 +566,8 @@ object RoundtripSpec extends ZIOHttpSpec {
           executorLayer = ZLayer(ZIO.serviceWith[ZClient[Any, Any, Body, Throwable, Response]](makeExecutor(_, port)))
 
           cause <- ZIO
-            .serviceWithZIO[EndpointExecutor[Any, Unit, Any]] { executor =>
-              executor.apply(endpointWithAnotherSignature.apply(42))
-            }
-            .provideSome[ZClient[Any, Any, Body, Throwable, Response] with Scope](executorLayer)
+            .serviceWithZIO[EndpointExecutor[Any, Unit, Any]](_.apply(endpointWithAnotherSignature.apply(42)))
+            .provideSome[ZClient[Any, Any, Body, Throwable, Response]](executorLayer)
             .cause
         } yield assertTrue(
           cause.prettyPrint.contains(

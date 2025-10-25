@@ -19,6 +19,7 @@ package zio.http
 import java.time.Instant
 import java.util.UUID
 
+import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
 
 import zio.test.Assertion.{anything, equalTo, fails, hasSize, succeeds}
@@ -33,6 +34,19 @@ object QueryParamsSpec extends ZIOHttpSpec {
   implicit val simpleWrapperSchema: Schema[SimpleWrapper] = DeriveSchema.gen[SimpleWrapper]
   case class Foo(a: Int, b: SimpleWrapper, c: NonEmptyChunk[String], chunk: Chunk[String])
   implicit val fooSchema: Schema[Foo]                     = DeriveSchema.gen[Foo]
+
+  final case class PhoneNumber(value: String)
+
+  object PhoneNumber {
+    def fromString(s: String): Option[PhoneNumber] =
+      if (s.forall(_.isDigit)) Some(PhoneNumber(s)) else None
+
+    implicit val schema: Schema[PhoneNumber] =
+      Schema[String].transformOrFail(
+        s => fromString(s).toRight(s"Invalid phone number: $s"),
+        p => Right(p.value),
+      )
+  }
 
   def spec =
     suite("QueryParams")(
@@ -195,7 +209,7 @@ object QueryParamsSpec extends ZIOHttpSpec {
             QueryParams.empty.addQueryParam(foo).queryParams("c") == Chunk("1", "2"),
             QueryParams.empty.addQueryParam(foo).queryParams("chunk") == Chunk("foo", "bar"),
             QueryParams.empty.addQueryParam(fooEmpty).queryParam("a").get == "0",
-            QueryParams.empty.addQueryParam(fooEmpty).queryParam("b").get == "",
+            QueryParams.empty.addQueryParam(fooEmpty).queryParam("b").isEmpty,
             QueryParams.empty.addQueryParam(fooEmpty).queryParams("c") == Chunk("1"),
             QueryParams.empty.addQueryParam(fooEmpty).queryParams("chunk").isEmpty,
           )
@@ -255,6 +269,57 @@ object QueryParamsSpec extends ZIOHttpSpec {
               ("?a=%2C&a=b%2Cc", QueryParams("a" -> Chunk(",", "b,c"))),
               ("?commas=%2C%2C%2C%2C%2C", QueryParams(("commas", ",,,,,"))),
               ("?commas=%2Cb%2Cc%2Cd%2Ce%2Cf", QueryParams(("commas", ",b,c,d,e,f"))),
+              ("?spaces=foo%20bar%20baz", QueryParams(("spaces", "foo bar baz"))),
+              ("?spaces=foo+bar+baz", QueryParams(("spaces", "foo bar baz"))),
+            ),
+          )
+
+          checkAll(gens) { case (queryStringFragment, expected) =>
+            val result = QueryParams.decode(queryStringFragment)
+            assertTrue(result == expected)
+          }
+        },
+        test("non-ASCII characters decoding") {
+          val gens = Gen.fromIterable(
+            Seq(
+              // Basic Latin extended characters
+              ("?name=caf%C3%A9", QueryParams(Map("name" -> Chunk("café")))),
+              ("?city=M%C3%BCnchen", QueryParams(Map("city" -> Chunk("München")))),
+              ("?greeting=na%C3%AFve", QueryParams(Map("greeting" -> Chunk("naïve")))),
+              ("?resume=r%C3%A9sum%C3%A9", QueryParams(Map("resume" -> Chunk("résumé")))),
+
+              // Cyrillic characters
+              (
+                "?hello=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9",
+                QueryParams(Map("hello" -> Chunk("Здравствуй"))),
+              ),
+
+              // Chinese characters
+              ("?greeting=%E4%BD%A0%E5%A5%BD", QueryParams(Map("greeting" -> Chunk("你好")))),
+
+              // Japanese characters
+              ("?hello=%E3%81%93%E3%82%93%E3%81%AB%E3%81%A1%E3%81%AF", QueryParams(Map("hello" -> Chunk("こんにちは")))),
+
+              // Arabic characters
+              ("?greeting=%D9%85%D8%B1%D8%AD%D8%A8%D8%A7", QueryParams(Map("greeting" -> Chunk("مرحبا")))),
+
+              // Emojis (4-byte UTF-8 sequences)
+              ("?emoji=%F0%9F%98%80", QueryParams(Map("emoji" -> Chunk("😀")))),
+              ("?party=%F0%9F%8E%89", QueryParams(Map("party" -> Chunk("🎉")))),
+              ("?rocket=%F0%9F%9A%80", QueryParams(Map("rocket" -> Chunk("🚀")))),
+
+              // Mixed ASCII and non-ASCII
+              ("?message=Hello%20%E4%B8%96%E7%95%8C%21", QueryParams(Map("message" -> Chunk("Hello 世界!")))),
+              ("?data=%E2%9C%93%20Done", QueryParams(Map("data" -> Chunk("✓ Done")))),
+
+              // Multiple parameters with non-ASCII
+              (
+                "?name=Jos%C3%A9&city=S%C3%A3o%20Paulo&country=Brasil",
+                QueryParams(Map("name" -> Chunk("José"), "city" -> Chunk("São Paulo"), "country" -> Chunk("Brasil"))),
+              ),
+
+              // Plus signs in non-ASCII context (spaces should be handled properly)
+              ("?search=caf%C3%A9+with+friends", QueryParams(Map("search" -> Chunk("café with friends")))),
             ),
           )
 
@@ -270,24 +335,91 @@ object QueryParamsSpec extends ZIOHttpSpec {
             Seq(
               (QueryParams.empty, ""),
               (QueryParams(Map("a" -> Chunk.empty)), "?a="),
-              (QueryParams(Map("a" -> Chunk(""))), "?a="),
               (QueryParams(Map("a" -> Chunk("foo"))), "?a=foo"),
               (QueryParams(Map("a" -> Chunk("foo", "fee"))), "?a=foo&a=fee"),
               (
                 QueryParams(Map("a" -> Chunk("scala is awesome!", "fee"), "b" -> Chunk("ZIO is awesome!"))),
-                "?a=scala%20is%20awesome%21&a=fee&b=ZIO%20is%20awesome%21",
+                "?a=scala+is+awesome%21&a=fee&b=ZIO+is+awesome%21",
               ),
               (QueryParams(Map("" -> Chunk(""))), ""),
               (QueryParams(Map("" -> Chunk("a"))), ""),
               (QueryParams(Map("a" -> Chunk(""))), "?a="),
               (QueryParams(Map("a" -> Chunk("", "b"))), "?a=&a=b"),
               (QueryParams(Map("a" -> Chunk("c,d"))), "?a=c%2Cd"),
+              (QueryParams(Map("spaces" -> Chunk("foo bar baz"))), "?spaces=foo+bar+baz"),
             ),
           )
 
           checkAll(gens) { case (queryParams, expected) =>
             val result = queryParams.encode
             assertTrue(result == expected)
+          }
+        },
+        test("non-ASCII characters encoding") {
+          val gens = Gen.fromIterable(
+            Seq(
+              // Basic Latin extended characters
+              (QueryParams(Map("name" -> Chunk("café"))), "?name=caf%C3%A9"),
+              (QueryParams(Map("city" -> Chunk("München"))), "?city=M%C3%BCnchen"),
+              (QueryParams(Map("greeting" -> Chunk("naïve"))), "?greeting=na%C3%AFve"),
+              (QueryParams(Map("resume" -> Chunk("résumé"))), "?resume=r%C3%A9sum%C3%A9"),
+
+              // Cyrillic characters
+              (
+                QueryParams(Map("hello" -> Chunk("Здравствуй"))),
+                "?hello=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9",
+              ),
+
+              // Chinese characters
+              (QueryParams(Map("greeting" -> Chunk("你好"))), "?greeting=%E4%BD%A0%E5%A5%BD"),
+
+              // Japanese characters
+              (QueryParams(Map("hello" -> Chunk("こんにちは"))), "?hello=%E3%81%93%E3%82%93%E3%81%AB%E3%81%A1%E3%81%AF"),
+
+              // Arabic characters
+              (QueryParams(Map("greeting" -> Chunk("مرحبا"))), "?greeting=%D9%85%D8%B1%D8%AD%D8%A8%D8%A7"),
+
+              // Emojis (4-byte UTF-8 sequences)
+              (QueryParams(Map("emoji" -> Chunk("😀"))), "?emoji=%F0%9F%98%80"),
+              (QueryParams(Map("party" -> Chunk("🎉"))), "?party=%F0%9F%8E%89"),
+              (QueryParams(Map("rocket" -> Chunk("🚀"))), "?rocket=%F0%9F%9A%80"),
+
+              // Mixed ASCII and non-ASCII
+              (QueryParams(Map("message" -> Chunk("Hello 世界!"))), "?message=Hello+%E4%B8%96%E7%95%8C%21"),
+              (QueryParams(Map("data" -> Chunk("✓ Done"))), "?data=%E2%9C%93+Done"),
+
+              // Multiple parameters with non-ASCII
+              (
+                QueryParams(Map("name" -> Chunk("José"), "city" -> Chunk("São Paulo"), "country" -> Chunk("Brasil"))),
+                "?name=Jos%C3%A9&city=S%C3%A3o+Paulo&country=Brasil",
+              ),
+
+              // Non-ASCII with special characters that need encoding
+              (QueryParams(Map("search" -> Chunk("café & tea"))), "?search=caf%C3%A9+%26+tea"),
+              (QueryParams(Map("path" -> Chunk("/résumé.pdf"))), "?path=%2Fr%C3%A9sum%C3%A9.pdf"),
+            ),
+          )
+
+          checkAll(gens) { case (queryParams, expected) =>
+            val result = queryParams.encode
+            assertTrue(result == expected)
+          }
+        },
+        test("encode-decode round trip with non-ASCII characters") {
+          // This test verifies that encoding and then decoding preserves non-ASCII characters
+          val testCases = Seq(
+            QueryParams(Map("café" -> Chunk("naïve résumé"))),
+            QueryParams(Map("город" -> Chunk("Москва"))),
+            QueryParams(Map("city" -> Chunk("北京"), "country" -> Chunk("中国"))),
+            QueryParams(Map("emoji" -> Chunk("🎉🚀😀"))),
+            QueryParams(Map("mixed" -> Chunk("Hello 世界! 🌍"))),
+            QueryParams(Map("special" -> Chunk("café & résumé = 100%"))),
+          )
+
+          checkAll(Gen.fromIterable(testCases)) { queryParams =>
+            val encoded = queryParams.encode
+            val decoded = QueryParams.decode(encoded)
+            assertTrue(decoded == queryParams)
           }
         },
       ),
@@ -309,7 +441,7 @@ object QueryParamsSpec extends ZIOHttpSpec {
           )
         },
       ),
-      suite("getAs - getAllAs")(
+      suite("query")(
         test("pure") {
           val typed          = "typed"
           val default        = 3
@@ -318,6 +450,7 @@ object QueryParamsSpec extends ZIOHttpSpec {
           val queryParams    = QueryParams(typed -> "1", typed -> "2", invalidTyped -> "str")
           val single         = QueryParams(typed -> "1")
           val queryParamsFoo = QueryParams("a" -> "1", "b" -> "foo", "c" -> "2", "chunk" -> "foo", "chunk" -> "bar")
+          val fromFoo = QueryParams.empty.addQueryParam(Foo(0, SimpleWrapper(""), NonEmptyChunk("1"), Chunk.empty))
           assertTrue(
             single.query[Int](typed) == Right(1),
             queryParams.query[Int](invalidTyped).isLeft,
@@ -336,6 +469,7 @@ object QueryParamsSpec extends ZIOHttpSpec {
             queryParams.queryOrElse[Chunk[Int]](unknown, Chunk(default)) == Chunk.empty,
             queryParams.queryOrElse[NonEmptyChunk[Int]](unknown, NonEmptyChunk(default)) == NonEmptyChunk(default),
             // case class
+            fromFoo.query[Foo] == Right(Foo(0, SimpleWrapper(""), NonEmptyChunk("1"), Chunk.empty)),
             queryParamsFoo.query[Foo] == Right(Foo(1, SimpleWrapper("foo"), NonEmptyChunk("2"), Chunk("foo", "bar"))),
             queryParamsFoo.query[SimpleWrapper] == Right(SimpleWrapper("1")),
             queryParamsFoo.query[SimpleWrapper]("b") == Right(SimpleWrapper("foo")),
@@ -371,6 +505,17 @@ object QueryParamsSpec extends ZIOHttpSpec {
           assertZIO(queryParams.queryZIO[Chunk[Int]](invalidTyped).exit)(fails(anything)) &&
           assertZIO(queryParams.queryZIO[Chunk[Int]](unknown).exit)(succeeds(equalTo(Chunk.empty[Int]))) &&
           assertZIO(queryParams.queryZIO[NonEmptyChunk[Int]](unknown).exit)(fails(anything))
+        },
+        test("decode optional query param") {
+          val req = Request.get(URL.empty).addQueryParam("phone", "1234567890")
+          assertTrue(
+            req.query[Option[PhoneNumber]]("phone") == Right(Some(PhoneNumber("1234567890"))),
+          )
+        },
+        test("decode invalid query param") {
+          val queryParams   = QueryParams.empty.addQueryParam("phone-number", "INVALID_PHONE")
+          val errorOrNumber = queryParams.query[PhoneNumber]("phone-number")
+          assertTrue(errorOrNumber.isLeft)
         },
       ),
       suite("encode - decode")(
