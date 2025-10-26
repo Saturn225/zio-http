@@ -39,8 +39,8 @@ object SimpleEffectBenchmarkServer extends ZIOAppDefault {
   private val nettyConfig = NettyConfig.default
     .leakDetection(LeakDetectionLevel.DISABLED)
 
-  private val configLayer              = ZLayer.succeed(config)
-  private val nettyConfigLayer         = ZLayer.succeed(nettyConfig)
+  private val configLayer      = ZLayer.succeed(config)
+  private val nettyConfigLayer = ZLayer.succeed(nettyConfig)
 
   override val run =
     Server.serve(routes).provide(configLayer, nettyConfigLayer, Server.customized)

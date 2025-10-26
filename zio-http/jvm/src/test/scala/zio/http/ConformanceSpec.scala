@@ -1258,13 +1258,13 @@ object ConformanceSpec extends ZIOSpecDefault {
             .addHeader(Header.SetCookie(Cookie.Response("test", "test", maxAge = Some(Duration.fromSeconds(86400)))))
 
           val app = Routes(
-            Method.GET / "valid"   -> Handler.fromResponse(validResponse),
+            Method.GET / "valid" -> Handler.fromResponse(validResponse),
           )
 
           for {
-            responseValid   <- app.runZIO(Request.get("/valid"))
+            responseValid <- app.runZIO(Request.get("/valid"))
           } yield {
-            val valid   = responseValid.headers.toList.exists(_.renderedValue.contains("Max-Age=86400"))
+            val valid = responseValid.headers.toList.exists(_.renderedValue.contains("Max-Age=86400"))
 
             assertTrue(valid)
           }

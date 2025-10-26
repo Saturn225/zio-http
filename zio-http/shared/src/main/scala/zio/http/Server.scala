@@ -1,12 +1,15 @@
 /*
  * Copyright 2021 - 2023 Sporta Technologies PVT LTD & the ZIO HTTP contributors.
  *
+
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
+
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
+
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -132,7 +135,7 @@ object Server extends ServerPlatformSpecific {
         this.soBacklog == that.soBacklog &&
         this.tcpNoDelay == that.tcpNoDelay &&
         this.validateHeaders == that.validateHeaders
-      case _ => false
+      case _            => false
     }
 
     override def hashCode(): Int = {
@@ -160,8 +163,8 @@ object Server extends ServerPlatformSpecific {
 
     override def toString: String = {
       s"Config($sslConfig, $address, $acceptContinue, $keepAlive, $requestDecompression, $responseCompression, " +
-      s"$requestStreaming, $maxInitialLineLength, $maxHeaderSize, $logWarningOnFatalError, $gracefulShutdownTimeout, " +
-      s"$webSocketConfig, $idleTimeout, $avoidContextSwitching, $soBacklog, $tcpNoDelay, $validateHeaders)"
+        s"$requestStreaming, $maxInitialLineLength, $maxHeaderSize, $logWarningOnFatalError, $gracefulShutdownTimeout, " +
+        s"$webSocketConfig, $idleTimeout, $avoidContextSwitching, $soBacklog, $tcpNoDelay, $validateHeaders)"
     }
 
     /**
@@ -341,46 +344,50 @@ object Server extends ServerPlatformSpecific {
       idleTimeout,
       avoidContextSwitching,
       soBacklog,
-      tcpNoDelay,      
+      tcpNoDelay,
       validateHeaders,
     )
 
     // Unapply method for pattern matching backward compatibility
-    def unapply(config: Config): Option[(
-      Option[SSLConfig],
-      InetSocketAddress,
-      Boolean,
-      Boolean,
-      Decompression,
-      Option[ResponseCompressionConfig],
-      RequestStreaming,
-      Int,
-      Int,
-      Boolean,
-      Duration,
-      WebSocketConfig,
-      Option[Duration],
-      Boolean,
-      Int,
-      Boolean,
-    )] = Some((
-      config.sslConfig,
-      config.address,
-      config.acceptContinue,
-      config.keepAlive,
-      config.requestDecompression,
-      config.responseCompression,
-      config.requestStreaming,
-      config.maxInitialLineLength,
-      config.maxHeaderSize,
-      config.logWarningOnFatalError,
-      config.gracefulShutdownTimeout,
-      config.webSocketConfig,
-      config.idleTimeout,
-      config.avoidContextSwitching,
-      config.soBacklog,
-      config.tcpNoDelay,
-    ))
+    def unapply(config: Config): Option[
+      (
+        Option[SSLConfig],
+        InetSocketAddress,
+        Boolean,
+        Boolean,
+        Decompression,
+        Option[ResponseCompressionConfig],
+        RequestStreaming,
+        Int,
+        Int,
+        Boolean,
+        Duration,
+        WebSocketConfig,
+        Option[Duration],
+        Boolean,
+        Int,
+        Boolean,
+      ),
+    ] = Some(
+      (
+        config.sslConfig,
+        config.address,
+        config.acceptContinue,
+        config.keepAlive,
+        config.requestDecompression,
+        config.responseCompression,
+        config.requestStreaming,
+        config.maxInitialLineLength,
+        config.maxHeaderSize,
+        config.logWarningOnFatalError,
+        config.gracefulShutdownTimeout,
+        config.webSocketConfig,
+        config.idleTimeout,
+        config.avoidContextSwitching,
+        config.soBacklog,
+        config.tcpNoDelay,
+      ),
+    )
 
     def config: zio.Config[Config] = {
       SSLConfig.config.optional ++
@@ -438,8 +445,8 @@ object Server extends ServerPlatformSpecific {
           tcpNoDelay = tcpNoDelay,
           validateHeaders = validateHeaders,
         )
-    }    
-    val default: Config = new Config(
+    }
+    val default: Config            = new Config(
       sslConfig = None,
       address = new InetSocketAddress(8080),
       acceptContinue = false,
